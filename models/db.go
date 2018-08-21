@@ -10,7 +10,7 @@ import (
 const (
 	SERVER     = "127.0.0.1"
 	DATABASE   = "test"
-	COLLECTION = "users"
+	COLLECTION = "movies"
 )
 
 // 定义一个mongodb数据库连接结构
@@ -24,7 +24,6 @@ func (m *MongoDB) Connect() (db *mgo.Database) {
 	if err != nil {
 		panic(err)
 	}
-	defer session.Close()
 
 	db = session.DB(m.Database)
 	return
