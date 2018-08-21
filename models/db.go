@@ -27,6 +27,7 @@ func (m *MongoDB) Connect() (db *mgo.Database) {
 	defer session.Close()
 
 	db = session.DB(m.Database)
+	return
 }
 
 var mongoDB = MongoDB{SERVER, DATABASE}
