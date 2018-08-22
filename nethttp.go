@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
-	_ "webgo/views"
+	_ "webgo/handles"
 )
 
-func main() {
+func httpServer() {
 	log.Fatal(http.ListenAndServe(":8888", nil))
 }
