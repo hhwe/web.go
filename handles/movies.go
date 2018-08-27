@@ -12,15 +12,6 @@ import (
 	"webgo/models"
 )
 
-func init() {
-	http.HandleFunc("/", Index)
-	http.HandleFunc("/movies1", AllMovies)
-	http.HandleFunc("/movies2", CreateMovie)
-	http.HandleFunc("/movies3", UpdateMovie)
-	http.HandleFunc("/movies4", DeleteMovie)
-	http.HandleFunc("/movies5/{id}", FindMovie)
-}
-
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hello World!")
 }

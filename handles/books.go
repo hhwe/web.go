@@ -12,10 +12,6 @@ var (
 	book = models.Book{}
 )
 
-func HomePage(c *gin.Context) {
-	c.String(200, "home page")
-}
-
 func AllBooks(c *gin.Context) {
 	books, err := book.FindAll()
 	if err != nil {

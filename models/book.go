@@ -35,7 +35,7 @@ func (b *Book) Delete(book Book) (err error) {
 	return
 }
 
-func (m *Book) Update(book Book) (err error) {
+func (b *Book) Update(book Book) (err error) {
 	err = db.C(bookCollection).UpdateId(book.ID, &book)
 	return
 }
