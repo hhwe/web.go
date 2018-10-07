@@ -1,3 +1,105 @@
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+{"password": "1", "username": "2"}
+
+###
+
+POST http://localhost:8000/register
+Accept: application/json
+Content-Type: application/json
+
+{"password": "1", "username": "2"}
+
+###
+
+POST http://localhost:8000/register
+Accept: application/json
+Content-Type: application/json
+
+{"password": "1", "username": "2"}
+
+###
+
+POST http://localhost:8000/register
+Accept: application/json
+Content-Type: application/json
+
+{"password": "1", "username": "2"}
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T093554.400.txt
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T093550.400.txt
+
+###
+
+POST http://localhost:8000/register
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T093533.400.txt
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T093420.400.txt
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T093416.400.txt
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T092907.400.txt
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+Content-Type: application/json
+
+<> 2018-10-07T092237.400.txt
+
+###
+
+POST http://localhost:8000/register?username=1&password=1
+Accept: application/json
+
+<> 2018-10-07T092028.400.txt
+
+###
+
+POST http://localhost:8000/register
+Accept: application/json
+
+<> 2018-10-07T090535.400.txt
+
+###
+
 GET http://localhost:8000/index
 Accept: application/json
 

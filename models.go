@@ -53,15 +53,14 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//个人项目部分代码
 type User struct {
 	ID       bson.ObjectId `bson:"_id"`
-	Name     string        `bson:"name"`
 	Age      int           `bson:"age"`
 	Sex      int           `bson:"sex"`
 	Email    string        `bson:"email"`
 	Phone    int           `bson:"phone"`
 	Summary  string        `bson:"summary"`
+	UserName string        `bson:"name"`
 	PassWord string        `bson:"password"`
 	Created  time.Time     `bson:"created"`
 }
@@ -69,16 +68,14 @@ type User struct {
 func addUser(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
-	// decode the request body
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// give the comment a unique ID and set the time
+
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	// insert it into the database
 	if err := db.DB("web").C("user").Insert(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -87,14 +84,14 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 
 func getUser(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
-	// load the users
+
 	var users []*User
 	if err := db.DB("web").C("user").
 		Find(nil).Sort("-created").Limit(100).All(&users); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// write it out
+
 	if err := json.NewEncoder(w).Encode(users); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
