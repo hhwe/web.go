@@ -199,7 +199,7 @@ app.listen(80);
 
 4.common目录：存放公共文件。
 
-5.public目录(可不选)，新建javascripts、stylesheets、images三个目录用以存储js、css、img相关文件。
+5.public目录(可不选)，新建js、css、img三个目录用以存储js、css、img相关文件。
 
 这里我们内置了一些js、css文件来实现简单页面样式和操作，在页面视图中直接使用即可，引用方法如下：
 
