@@ -11,7 +11,7 @@ var templates = template.Must(template.ParseFiles(
 	"static/index.html", "static/register.html", "static/login.html"))
 
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
-	err := templates.ExecuteTemplate(w, tmpl + ".html", data)
+	err := templates.ExecuteTemplate(w, tmpl+".html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -26,7 +26,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		renderTemplate(w, r.URL.Path[1:], nil)
 	case "POST":
-		handleInsert(w, r)
+		addUser(w, r)
 	}
 }
 
@@ -57,7 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatal("cannot dial mongo", err)
 	}
-	defer db.Close()  // clean up when we’re done
+	defer db.Close() // clean up when we’re done
 
 	// testing db
 	http.HandleFunc("/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))

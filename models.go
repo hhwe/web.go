@@ -29,7 +29,7 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 	c.ID = bson.NewObjectId()
 	c.When = time.Now()
 	// insert it into the database
-	if err := db.DB("commentsapp").C("comments").Insert(&c); err != nil {
+	if err := db.DB("web").C("comments").Insert(&c); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -38,10 +38,10 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRead(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r,"database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Session)
 	// load the comments
 	var comments []*comment
-	if err := db.DB("commentsapp").C("comments").
+	if err := db.DB("web").C("comments").
 		Find(nil).Sort("-when").Limit(100).All(&comments); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -53,41 +53,50 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-////个人项目部分代码
-//type User struct {
-//	ID       bson.ObjectId `bson:"_id"`
-//	UserName string        `bson:"username"`
-//	Summary  string        `bson:"summary"`
-//	Age      int           `bson:"age"`
-//	Phone    int           `bson:"phone"`
-//	PassWord string        `bson:"password"`
-//	Sex      int           `bson:"sex"`
-//	Name     string        `bson:"name"`
-//	Email    string        `bson:"email"`
-//}
-//
-//func AddUser(password string, username string) (err error) {
-//	con := GetDataBase().C("user")
-//	//可以添加一个或多个文档
-//	/* 对应mongo命令行
-//	   db.user.insert({username:"13888888888",summary:"code",
-//	   age:20,phone:"13888888888"})*/
-//	err = con.Insert(&User{ID: bson.NewObjectId(), UserName: username, PassWord: password})
-//	return
-//}
-//
-//func FindUser(username string) (User, error) {
-//	var user User
-//	con := GetDataBase().C("user")
-//	//通过bson.M(是一个map[string]interface{}类型)进行
-//	//条件筛选，达到文档查询的目的
-//	/* 对应mongo命令行
-//	  db.user.find({username:"13888888888"})*/
-//	if err := con.Find(bson.M{"username": username}).One(&user); err != nil {
-//		if err.Error() != GetErrNotFound().Error() {
-//			return user, err
-//		}
-//
-//	}
-//	return user, nil
-//}
+//个人项目部分代码
+type User struct {
+	ID       bson.ObjectId `bson:"_id"`
+	Name     string        `bson:"name"`
+	Age      int           `bson:"age"`
+	Sex      int           `bson:"sex"`
+	Email    string        `bson:"email"`
+	Phone    int           `bson:"phone"`
+	Summary  string        `bson:"summary"`
+	PassWord string        `bson:"password"`
+	Created  time.Time     `bson:"created"`
+}
+
+func addUser(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Session)
+
+	// decode the request body
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// give the comment a unique ID and set the time
+	u.ID = bson.NewObjectId()
+	u.Created = time.Now()
+	// insert it into the database
+	if err := db.DB("web").C("user").Insert(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func getUser(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Session)
+	// load the users
+	var users []*User
+	if err := db.DB("web").C("user").
+		Find(nil).Sort("-created").Limit(100).All(&users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// write it out
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

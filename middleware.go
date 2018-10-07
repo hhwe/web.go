@@ -52,7 +52,6 @@ func DBSession(db *mgo.Session) Middleware {
 	}
 }
 
-
 // Method ensures that url can only be requested with a specific method, else returns a 400 Bad Request
 func Method(ms ...string) Middleware {
 
@@ -88,4 +87,3 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	}
 	return f
 }
-
