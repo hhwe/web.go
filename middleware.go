@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/gorilla/context"
+	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
 	"time"
@@ -29,8 +31,30 @@ func Logging() Middleware {
 	}
 }
 
+func DBSession(db *mgo.Session) Middleware {
+	// return the Adapter
+	return func(f http.HandlerFunc) http.HandlerFunc {
+		// the adapter (when called) should return a new handler
+		return func(w http.ResponseWriter, r *http.Request) {
+			// copy the database session
+			dbsession := db.Copy()
+			defer dbsession.Close() // clean up
+
+			// save it in the mux context, add to request lifetime
+			context.Set(r, "database", dbsession)
+
+			// pass execution to the original handler
+			f(w, r)
+
+			// clears request values at the end of a request lifetime.
+			context.ClearHandler(f)
+		}
+	}
+}
+
+
 // Method ensures that url can only be requested with a specific method, else returns a 400 Bad Request
-func Method(m string) Middleware {
+func Method(ms ...string) Middleware {
 
 	// Create a new Middleware
 	return func(f http.HandlerFunc) http.HandlerFunc {
@@ -39,8 +63,15 @@ func Method(m string) Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			// Do middleware things
-			if r.Method != m {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			method := false
+			for _, m := range ms {
+				if r.Method == m {
+					method = true
+					break
+				}
+			}
+			if !method {
+				http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 				return
 			}
 
