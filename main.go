@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -51,7 +52,7 @@ func Comment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func main() {
+func init() {
 	// connect to the database
 	db, err := mgo.Dial("localhost")
 	if err != nil {
@@ -59,6 +60,11 @@ func main() {
 	}
 	defer db.Close() // clean up when we’re done
 
+	//// logging setting
+	//logger := log.New(os.Stderr, "", 666)
+}
+
+func main() {
 	// testing db
 	http.HandleFunc("/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))
 

@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/context"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"log"
 	"net/http"
 	"time"
 )
@@ -72,6 +73,9 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+	if u.Phone == 0 || u.UserName == "" || u.PassWord == "" {
+		log.Panic("ERROR: need phone and password")
 	}
 
 	u.ID = bson.NewObjectId()

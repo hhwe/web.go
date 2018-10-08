@@ -25,12 +25,23 @@ func Logging() Middleware {
 				log.Println(r.Method, r.URL.Path, time.Since(start))
 			}()
 
+			defer func() {
+				e := recover()
+				if e != nil {
+					http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				}
+			}()
+
 			// Call the next middleware/handler in chain
 			f(w, r)
+
+
 		}
 	}
 }
 
+// DBSession used to add a mongodb session in request context,
+// make sure a request process have a isolated database session
 func DBSession(db *mgo.Session) Middleware {
 	// return the Adapter
 	return func(f http.HandlerFunc) http.HandlerFunc {
@@ -52,7 +63,8 @@ func DBSession(db *mgo.Session) Middleware {
 	}
 }
 
-// Method ensures that url can only be requested with a specific method, else returns a 400 Bad Request
+// Method ensures that url can only be requested with a specific method,
+// else returns a 400 Bad Request
 func Method(ms ...string) Middleware {
 
 	// Create a new Middleware
