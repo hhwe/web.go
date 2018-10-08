@@ -8,8 +8,12 @@ import (
 	"os"
 )
 
+// parse static file when app was compiled
 var templates = template.Must(template.ParseFiles(
 	"static/index.html", "static/register.html", "static/login.html"))
+
+// logging setting
+var logger = log.New(os.Stderr, "", log.Ldate | log.Ltime | log.Lshortfile)
 
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", data)
@@ -27,7 +31,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		renderTemplate(w, r.URL.Path[1:], nil)
 	case "POST":
-		addUser(w, r)
+		signIn(w, r)
 	}
 }
 
@@ -52,19 +56,14 @@ func Comment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func init() {
+func main() {
 	// connect to the database
 	db, err := mgo.Dial("localhost")
 	if err != nil {
-		log.Fatal("cannot dial mongo", err)
+		logger.Fatal("cannot dial mongo", err)
 	}
 	defer db.Close() // clean up when we’re done
 
-	//// logging setting
-	//logger := log.New(os.Stderr, "", 666)
-}
-
-func main() {
 	// testing db
 	http.HandleFunc("/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))
 
@@ -83,5 +82,12 @@ func main() {
 	http.Handle("/static/", http.StripPrefix(
 		"/static/", http.FileServer(http.Dir("static/"))))
 
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	logger.Println(` 
+* Environment: production
+  WARNING: Do not use the development server in a production environment.
+* Debug mode: off
+* Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+`)
+	logger.Fatal(http.ListenAndServe(":8000", nil))
+
 }

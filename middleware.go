@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gorilla/context"
 	"gopkg.in/mgo.v2"
-	"log"
 	"net/http"
 	"time"
 )
@@ -22,7 +21,7 @@ func Logging() Middleware {
 			// Do middleware things
 			start := time.Now()
 			defer func() {
-				log.Println(r.Method, r.URL.Path, time.Since(start))
+				logger.Println(r.Method, r.URL.Path, time.Since(start))
 			}()
 
 			defer func() {

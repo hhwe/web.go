@@ -7,6 +7,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -59,11 +60,57 @@ type User struct {
 	Age      int           `bson:"age"`
 	Sex      int           `bson:"sex"`
 	Email    string        `bson:"email"`
-	Phone    int           `bson:"phone"`
+	Phone    string           `bson:"phone"`
 	Summary  string        `bson:"summary"`
 	UserName string        `bson:"name"`
 	PassWord string        `bson:"password"`
 	Created  time.Time     `bson:"created"`
+}
+
+func signIn(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Session)
+
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
+		logger.Panic("ERROR: Invalid input")
+	}
+
+	if m, _ := regexp.MatchString(`^(1[3|4|5|8][0-9]\d{4,8})$`, u.Phone); !m {
+		logger.Panic("ERROR: invalid phone")
+	}
+
+	u.ID = bson.NewObjectId()
+	u.Created = time.Now()
+	if err := db.DB("web").C("user").Insert(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func auth(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Session)
+
+	var user User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := db.DB("web").C("user").Find(
+		bson.M{"username":user.UserName, "password":user.PassWord}).
+		Sort("-created").One(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +121,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if u.Phone == 0 || u.UserName == "" || u.PassWord == "" {
+	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
 		log.Panic("ERROR: need phone and password")
 	}
 
@@ -84,6 +131,8 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	//http.Redirect(w, r, "/login", http.StatusFound)
 }
 
 func getUser(w http.ResponseWriter, r *http.Request) {
