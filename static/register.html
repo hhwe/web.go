@@ -26,20 +26,24 @@
                 "password": $("#password").val(),
                 "confirm": $("#confirm").val(),
             };
+            if (data.confirm !== data.password) {
+                alert("Password not confirmed");
+                return
+            }
             data=JSON.stringify(data);
             $.ajax({
                 url:'/register',
                 type:'POST',
                 data:data,
-                dataType: "json",
+                // dataType: "json", 如果指定了dataType为json返回的时候数据一定要是json格式的否则会一直执行error event
                 contentType:"application/json;charset=utf-8",
                 success:function(data,status){
-                    // if(status === '200'){
-                    //     location.href='/login';
-                    // }
-                    location.href='/index';
+                    if(status === 'success'){
+                        location.href='/login';
+                    }
                 },
                 error:function(data,err){
+                    alert("error input");
                     location.href='/register';
                 }
             });

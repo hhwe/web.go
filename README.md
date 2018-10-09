@@ -41,7 +41,7 @@ mgo.v2：一个针对MongoDB操作的对象模型库，封装了MongoDB对文档
      ----------------------------------------------------
      |              |                  |                |
 ------------    ------------    --------------    --------------
-| 登录注册 |    | 商品展示 |    | 数据库设计 |    | 购物车结算 |
+| 登录注册   |    | 商品展示 |    | 数据库设计 |    | 购物车结算 |
 ------------    ------------    --------------    --------------
 
 ```
@@ -55,11 +55,11 @@ mgo.v2：一个针对MongoDB操作的对象模型库，封装了MongoDB对文档
 
 ```
 --------    ------------    ------------    --------------
-| 登录 | >> | 浏览商品 | >> | 选择商品 | >> | 加入购物车 |
+| 登录 | >>  | 浏览商品 | >> | 选择商品 | >> | 加入购物车 |
 --------    ------------    ------------    --------------
    ^                                               X
 --------                        --------    --------------
-| 注册 |                        | 结算 | << | 查看购物车 |
+| 注册 |                         | 结算 | << | 查看购物车 |
 --------                        --------    --------------
 ```
 
@@ -81,7 +81,7 @@ MongoDB是一个开源的NoSQL数据库，相比MySQL那样的关系型数据库
 
 关于user集合，我们设计的属性有name(用户名)、password(密码)， 如下所示：
 
-```json
+```
 name: { type: string, required: true },
 password: { type: string, required: true },
 ```
@@ -90,7 +90,7 @@ password: { type: string, required: true },
 
 关于commodity集合，我们设计的属性有name(商品名称)、price(商品价格)、imgSrc(商品展示图片路径)， 如下所示：
 
-```json
+```
 name: { type: string, required: true },
 price: { type: string, required: true },
 imagSrc: { type: string, required: false },
@@ -101,7 +101,7 @@ imagSrc: { type: string, required: false },
 关于cart集合，我们设计的属性有uId(用户ID)、cId(商品ID)、cName(商品名称)、cPrice(商品价格)、cImgSrc(商品展示图片路径)、cQuantity(商品数量)、cStatus(商品结算状态，未结算为false,已结算为true)， 如下所示：
 
 
-```json
+```
 uid: { type: string, required: true },
 cid: { type: string, required: true },
 cname: { type: string, required: false },
