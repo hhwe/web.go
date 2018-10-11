@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gopkg.in/mgo.v2"
 	"net/http"
 	"time"
 )
@@ -25,7 +26,6 @@ func addCookie(w http.ResponseWriter, name string, value string) {
 	http.SetCookie(w, &cookie)
 }
 
-
 // validate cookie from request of current user
 func validCookie(r *http.Request, name string, value string) bool {
 	cookie, err := r.Cookie(name)
@@ -37,3 +37,24 @@ func validCookie(r *http.Request, name string, value string) bool {
 	}
 	return false
 }
+
+// build index of mongodb
+func ensureIndex(s *mgo.Session) {
+	session := s.Copy()
+	defer session.Close()
+
+	c := session.DB("store").C("books")
+
+	index := mgo.Index{
+		Key:        []string{"isbn"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+	err := c.EnsureIndex(index)
+	if err != nil {
+		panic(err)
+	}
+}
+

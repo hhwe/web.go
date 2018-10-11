@@ -56,6 +56,8 @@ func Comment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+
 func main() {
 	// connect to the database
 	db, err := mgo.Dial("localhost")
@@ -63,6 +65,9 @@ func main() {
 		logger.Fatal("cannot dial mongo", err)
 	}
 	defer db.Close() // clean up when we’re done
+
+	db.SetMode(mgo.Monotonic, true)
+	ensureIndex(db)
 
 	// testing db
 	http.HandleFunc("/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))

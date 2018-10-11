@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/context"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"io"
@@ -56,7 +55,17 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
+type User struct {
+	ID       bson.ObjectId `bson:"_id"`
+	Age      int           `bson:"age"`
+	Sex      int           `bson:"sex"`
+	Email    string        `bson:"email"`
+	Phone    string           `bson:"phone"`
+	Summary  string        `bson:"summary"`
+	UserName string        `bson:"name"`
+	PassWord string        `bson:"password"`
+	Created  time.Time     `bson:"created"`
+}
 
 func signIn(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
@@ -146,12 +155,17 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+
+// TODO: Object Relationship Mapping
 type Model interface {
 	//GetID(db *mgo.Session) bson.ObjectId
 	SelectOne(id interface{}, db *mgo.Session) interface{}  // get one documents
 	InsertOne(r io.ReadCloser, db *mgo.Session) error // set one documents
 	//UpdateOne(id interface{}) interface{}  // update one documents
 	//DeleteOne(id interface{}) error     // delete one documents
+
+	Collection() string  // return collection to storage
 }
 
 type BaseModel struct {
@@ -185,18 +199,6 @@ func InsertOne(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-type User struct {
-	ID       bson.ObjectId `bson:"_id"`
-	Age      int           `bson:"age"`
-	Sex      int           `bson:"sex"`
-	Email    string        `bson:"email"`
-	Phone    string           `bson:"phone"`
-	Summary  string        `bson:"summary"`
-	UserName string        `bson:"name"`
-	PassWord string        `bson:"password"`
-	Created  time.Time     `bson:"created"`
 }
 
 func (user *User) SelectOne(id interface{}, db *mgo.Session) (u *User, err error) {

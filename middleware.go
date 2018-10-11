@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/gorilla/context"
 	"gopkg.in/mgo.v2"
 	"net/http"
 	"time"
@@ -57,7 +56,7 @@ func DBSession(db *mgo.Session) Middleware {
 			f(w, r)
 
 			// clears request values at the end of a request lifetime.
-			context.ClearHandler(f)
+			context.Clear(r)
 		}
 	}
 }
