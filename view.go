@@ -1,3 +1,12 @@
+// This is the viewpoint of web application.
+
+// At the beginning, we use templates to parse all static file,
+// so that we don't need parse them every request.
+// The renderTemplate functions render a template file when get some page.
+
+// Every request handled depend on their's method,
+// different method has there own's handle function.
+// The low-level handle functions is in models.go.
 package main
 
 import (
@@ -30,12 +39,17 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		renderTemplate(w, r.URL.Path[1:], nil)
 	case "POST":
-		signIn(w, r)
+		register(w, r)
 	}
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, r.URL.Path[1:], nil)
+	switch r.Method {
+	case "GET":
+		renderTemplate(w, r.URL.Path[1:], nil)
+	case "POST":
+		login(w, r)
+	}
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
@@ -55,3 +69,6 @@ func Comment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ErrorTest(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+}

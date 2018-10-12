@@ -20,25 +20,30 @@
 			}
 		</style>
         <script type="text/javascript">
-           function login(){
-               var username = $('#username').val(),password = $('#password').val();
-               var data = { "uname": username, "upwd":password};
-               $.ajax({
-                   url:'/login',
-                   type:'POST',
-                   data:data,
-                   success:function(data,status){
-                       if(status === 'success'){
-                           location.href='home';
-                       }
-                   },
-                   error:function(data,status){
-                     if(status === "error"){
-                         location.href='login'
-                     }
-                   }
-               });
-           }
+          function login(){
+              var data={
+                  "username": $("#username").val(),
+                  "password": $("#password").val(),
+              };
+              data=JSON.stringify(data);
+              $.ajax({
+                  url:'/login',
+                  type:'POST',
+                  data:data,
+                  contentType:"application/json;charset=utf-8",
+                  success:function(data,status){
+                      if(status === 'success'){
+                          location.href='/index';
+                      }
+                  },
+                  error:function(data,status){
+                      alert("error login");
+                      if(status === "error"){
+                          location.href='/login'
+                      }
+                  }
+              });
+          }
         </script>
   </head>
 <body>

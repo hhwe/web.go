@@ -7,10 +7,10 @@ func ensureIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
 
-	c := session.DB("store").C("books")
+	c := session.DB("web").C("user")
 
 	index := mgo.Index{
-		Key:        []string{"isbn"},
+		Key:        []string{"email", "phone", "username"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,

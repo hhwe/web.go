@@ -66,7 +66,7 @@ type User struct {
 	Created  time.Time     `bson:"created"`
 }
 
-func signIn(w http.ResponseWriter, r *http.Request) {
+func register(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
 	var u User
@@ -90,11 +90,9 @@ func signIn(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	addCookie(w, "name", u.UserName)
 }
 
-func auth(w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
 	var user User
@@ -103,9 +101,8 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.DB("web").C("user").Find(
-		bson.M{"username":user.UserName, "password":user.PassWord}).
-		Sort("-created").One(&user); err != nil {
+	if err := db.DB("web").C("user").Find(bson.M{"username":user.UserName,
+			"password":user.PassWord}).One(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -114,6 +111,8 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	addCookie(w, "name", user.UserName)
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {

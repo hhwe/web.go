@@ -1,3 +1,8 @@
+// Copyright 2018 The hhwe. All rights reserved.
+// Use of this source code is governed by a MIT
+// license that can be found in the LICENSE file.
+
+// Package webgo implements a simple web application package.
 package main
 
 import (
@@ -16,8 +21,10 @@ func main() {
 	db.SetMode(mgo.Monotonic, true)
 	ensureIndex(db)
 
-	// testing db
-	http.HandleFunc("/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))
+	// testing
+	http.HandleFunc("/test/error", Chain(ErrorTest, Method("GET", "POST"), DBSession(db), Logging()))
+	http.HandleFunc("/test/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))
+
 
 	// home page
 	http.HandleFunc("/", Chain(Index, Method("GET"), DBSession(db), Logging()))

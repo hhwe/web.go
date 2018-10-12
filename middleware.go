@@ -1,3 +1,4 @@
+// Using closures to implement the middleware.
 package main
 
 import (
