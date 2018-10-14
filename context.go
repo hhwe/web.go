@@ -109,8 +109,8 @@ func validCookie(r *http.Request, name string) bool {
 	}
 
 	// check cookie's value is valid and in sessions
-	if cookie.Value == "" || sessions[cookie.Value] == "" {
-		return false
+	if sessions[cookie.Name] == cookie.Value {
+		return true
 	}
-	return true
+	return false
 }
