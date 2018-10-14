@@ -38,23 +38,6 @@ func Logging() Middleware {
 	}
 }
 
-// Check request's authorizations, make sure all important data save
-func Auth() Middleware {
-
-	// Create a new Middleware
-	return func(f http.HandlerFunc) http.HandlerFunc {
-
-		// Define the http.HandlerFunc
-		return func(w http.ResponseWriter, r *http.Request) {
-			validCookie(w, r, "name")
-
-			// Call the next middleware/handler in chain
-			f(w, r)
-
-		}
-	}
-}
-
 // DBSession used to add a mongodb session in request context,
 // make sure a request process have a isolated database session
 func DBSession(db *mgo.Session) Middleware {
@@ -103,6 +86,26 @@ func Method(ms ...string) Middleware {
 
 			// Call the next middleware/handler in chain
 			f(w, r)
+		}
+	}
+}
+
+// Check request's authorizations, make sure all important data save
+func Auth() Middleware {
+
+	// Create a new Middleware
+	return func(f http.HandlerFunc) http.HandlerFunc {
+
+		// Define the http.HandlerFunc
+		return func(w http.ResponseWriter, r *http.Request) {
+			if !validCookie(r, "name") {
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+
+			// Call the next middleware/handler in chain
+			f(w, r)
+
 		}
 	}
 }

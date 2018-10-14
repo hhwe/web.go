@@ -21,7 +21,7 @@ var templates = template.Must(template.ParseFiles(
 	"static/index.html", "static/register.html", "static/login.html"))
 
 // logging setting
-var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lshortfile)
+var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", data)
@@ -71,4 +71,17 @@ func Comment(w http.ResponseWriter, r *http.Request) {
 
 func ErrorTest(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+}
+
+func UserApi(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		selectUser(w, r)
+	case "POST":
+		insertUser(w, r)
+	case "PUT":
+		putUser(w, r)
+	case "DELETE":
+		deleteUser(w, r)
+	}
 }

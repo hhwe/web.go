@@ -59,7 +59,6 @@ func (c *Context) clear(r *http.Request) {
 	delete(c.Data, r)
 }
 
-
 // Session --------------------------------------------------------------------
 
 //// Session stores the values and optional configuration for a session.
@@ -82,6 +81,7 @@ func (c *Context) clear(r *http.Request) {
 //	return newRegistry
 //}
 
+// todo: store session on redis
 var sessions = map[string]string{}
 
 
@@ -98,16 +98,19 @@ func addCookie(w http.ResponseWriter, name string, value string) {
 		Path:    "/",
 	}
 	http.SetCookie(w, &cookie)
+	sessions[name] = value
 }
 
 // validate cookie from request of current request
-func validCookie(w http.ResponseWriter, r *http.Request, name string) {
+func validCookie(r *http.Request, name string) bool {
 	cookie, err := r.Cookie(name)
 	if err != nil {
 		panic(err)
 	}
 
-	if cookie.Value == "" || sessions[cookie.Value] != "" {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	// check cookie's value is valid and in sessions
+	if cookie.Value == "" || sessions[cookie.Value] == "" {
+		return false
 	}
+	return true
 }

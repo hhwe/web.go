@@ -107,15 +107,32 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// note: if this function execute after json encode will not work
+	addCookie(w, "name", user.UserName)
+
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	addCookie(w, "name", user.UserName)
 }
 
-func addUser(w http.ResponseWriter, r *http.Request) {
+func selectUser(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Session)
+
+	var users []*User
+	if err := db.DB("web").C("user").
+		Find(nil).Sort("-created").Limit(100).All(&users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func insertUser(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
 	var u User
@@ -133,22 +150,44 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	//http.Redirect(w, r, "/login", http.StatusFound)
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
+func putUser(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
-	var users []*User
-	if err := db.DB("web").C("user").
-		Find(nil).Sort("-created").Limit(100).All(&users); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
+		log.Panic("ERROR: need phone and password")
+	}
 
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	u.ID = bson.NewObjectId()
+	u.Created = time.Now()
+	if err := db.DB("web").C("user").Insert(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Session)
+
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
+		log.Panic("ERROR: need phone and password")
+	}
+
+	u.ID = bson.NewObjectId()
+	u.Created = time.Now()
+	if err := db.DB("web").C("user").Insert(&u); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 }

@@ -1,14 +1,14 @@
 package orm
 
 import (
-"fmt"
+	"fmt"
 )
 
 func run() {
 
 	//create a db object // this will remain same for the rest of the application
 	db1, err1 := New(MYSQL) //db.SQLITE // db.MONGODB
-	if (err1 != nil) {
+	if err1 != nil {
 		fmt.Println("Error1 in db1: " + err1.Error())
 		return
 	}
@@ -28,7 +28,7 @@ func run() {
 	//repeat the same code just rename the variables
 	//This time db.New will return the old object (as it's following singleton)
 	db2, err2 := New(MYSQL)
-	if (err2 != nil) {
+	if err2 != nil {
 		fmt.Println("Error2 in db2: " + err2.Error())
 		return
 	}

@@ -6,10 +6,10 @@ import (
 )
 
 type DB interface {
-	Table(name string) //set table name
+	Table(name string)     //set table name
 	Query(q string) string //perform raw query on the table
-	Find(id int) string //find a record by it's primary id
-	Get() string //fetch all the records from the table
+	Find(id int) string    //find a record by it's primary id
+	Get() string           //fetch all the records from the table
 }
 
 const (
@@ -19,7 +19,7 @@ const (
 	MONGODB
 )
 
-var db DB //will be used as a singleton db object
+var db DB          //will be used as a singleton db object
 var once sync.Once //make thread safe singleton
 
 //Return a db singleton object
