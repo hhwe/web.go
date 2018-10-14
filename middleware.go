@@ -34,6 +34,22 @@ func Logging() Middleware {
 			// Call the next middleware/handler in chain
 			f(w, r)
 
+		}
+	}
+}
+
+// Check request's authorizations, make sure all important data save
+func Auth() Middleware {
+
+	// Create a new Middleware
+	return func(f http.HandlerFunc) http.HandlerFunc {
+
+		// Define the http.HandlerFunc
+		return func(w http.ResponseWriter, r *http.Request) {
+			validCookie(w, r, "name")
+
+			// Call the next middleware/handler in chain
+			f(w, r)
 
 		}
 	}

@@ -25,7 +25,6 @@ func main() {
 	http.HandleFunc("/test/error", Chain(ErrorTest, Method("GET", "POST"), DBSession(db), Logging()))
 	http.HandleFunc("/test/comments", Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))
 
-
 	// home page
 	http.HandleFunc("/", Chain(Index, Method("GET"), DBSession(db), Logging()))
 

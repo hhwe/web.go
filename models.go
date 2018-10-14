@@ -59,9 +59,9 @@ type User struct {
 	Age      int           `bson:"age"`
 	Sex      int           `bson:"sex"`
 	Email    string        `bson:"email"`
-	Phone    string           `bson:"phone"`
+	Phone    string        `bson:"phone"`
 	Summary  string        `bson:"summary"`
-	UserName string        `bson:"name"`
+	UserName string        `bson:"username"`
 	PassWord string        `bson:"password"`
 	Created  time.Time     `bson:"created"`
 }
@@ -101,14 +101,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.DB("web").C("user").Find(bson.M{"username":user.UserName,
-			"password":user.PassWord}).One(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := db.DB("web").C("user").Find(bson.M{"username": user.UserName,
+		"password": user.PassWord}).One(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

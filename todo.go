@@ -1,28 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"io"
 	"net/http"
 	"time"
-	"encoding/json"
 )
 
 // TODO: Object Relationship Mapping
 type Model interface {
 	//GetID(db *mgo.Session) bson.ObjectId
-	SelectOne(id interface{}, db *mgo.Session) interface{}  // get one documents
-	InsertOne(r io.ReadCloser, db *mgo.Session) error // set one documents
+	SelectOne(id interface{}, db *mgo.Session) interface{} // get one documents
+	InsertOne(r io.ReadCloser, db *mgo.Session) error      // set one documents
 	//UpdateOne(id interface{}) interface{}  // update one documents
 	//DeleteOne(id interface{}) error     // delete one documents
 
-	Collection() string  // return collection to storage
+	Collection() string // return collection to storage
 }
 
 type BaseModel struct {
 	ID bson.ObjectId
-	m Model
+	m  Model
 }
 
 func SelectOne(w http.ResponseWriter, r *http.Request, b *BaseModel) {
@@ -55,7 +55,7 @@ func InsertOne(w http.ResponseWriter, r *http.Request) {
 
 func (user *User) SelectOne(id interface{}, db *mgo.Session) (u *User, err error) {
 	if err = db.DB("web").C("user").Find(
-		bson.M{"username":user.UserName, "password":user.PassWord}).
+		bson.M{"username": user.UserName, "password": user.PassWord}).
 		Sort("-created").One(&user); err != nil {
 		return
 	}

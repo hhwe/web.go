@@ -10,10 +10,10 @@
 package main
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"html/template"
 )
 
 // parse static file when app was compiled
@@ -21,7 +21,7 @@ var templates = template.Must(template.ParseFiles(
 	"static/index.html", "static/register.html", "static/login.html"))
 
 // logging setting
-var logger = log.New(os.Stderr, "", log.Ldate | log.Ltime | log.Lshortfile)
+var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lshortfile)
 
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", data)
@@ -53,7 +53,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, r.URL.Path[1:], nil)
+	renderTemplate(w, "index", nil)
 }
 
 func Cart(w http.ResponseWriter, r *http.Request) {
