@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"gopkg.in/mgo.v2"
 )
@@ -26,16 +27,18 @@ func init() {
 		//Username: user,
 		//Password: pass,
 		//Database:database,
+		Timeout:time.Second * 1,
+		PoolLimit:2,
 	}
 	session, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.Fatalln("create session error ", err)
 	}
-	//defer session.Close() // clean up when we’re done
 
-	globalSession = session
 	session.SetMode(mgo.Monotonic, true)
 	ensureIndex(session)
+
+	globalSession = session
 }
 
 // build index of mongodb

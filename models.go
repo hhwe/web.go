@@ -55,11 +55,11 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 }
 
 type User struct {
-	ID       bson.ObjectId `bson:"_id"`
-	Age      int           `bson:"age"`
-	Sex      int           `bson:"sex"`
-	Email    string        `bson:"email"`
-	Phone    string        `bson:"phone"`
+	ID       bson.ObjectId `bson:"_id" json:"id"`
+	Age      int           `bson:"age" json:"age"`
+	Sex      int           `bson:"sex" json:"sex"`
+	Email    string        `bson:"email" json:"email"`
+	Phone    string        `bson:"phone" json:"phone"`
 	Summary  string        `bson:"summary"`
 	UserName string        `bson:"username"`
 	PassWord string        `bson:"password"`
@@ -90,6 +90,8 @@ func register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	ResponseWithJson(w, http.StatusCreated, u)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -110,10 +112,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 	// note: if this function execute after json encode will not work
 	addCookie(w, "name", u.UserName)
 
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	//if err := json.NewEncoder(w).Encode(user); err != nil {
+	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+
+	ResponseWithJson(w, http.StatusCreated, u)
 }
 
 func selectUser(w http.ResponseWriter, r *http.Request) {
@@ -126,10 +130,7 @@ func selectUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	ResponseWithJson(w, http.StatusOK, users)
 }
 
 func insertUser(w http.ResponseWriter, r *http.Request) {
@@ -146,13 +147,15 @@ func insertUser(w http.ResponseWriter, r *http.Request) {
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	if err := db.DB("web").C("user").Insert(&u); err != nil {
+	if err := Insert(db, "user", &u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	ResponseWithJson(w, http.StatusCreated, u)
 }
 
-func putUser(w http.ResponseWriter, r *http.Request) {
+func updateUser(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
 	var u User
@@ -166,7 +169,7 @@ func putUser(w http.ResponseWriter, r *http.Request) {
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	if err := db.DB("web").C("user").Insert(&u); err != nil {
+	if err := FindOne(db, "user", bson.IsObjectIdHex()); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
