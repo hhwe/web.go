@@ -6,42 +6,32 @@
 package main
 
 import (
-	"gopkg.in/mgo.v2"
 	"net/http"
 )
 
 func main() {
-	// connect to the database
-	db, err := mgo.Dial("localhost")
-	if err != nil {
-		logger.Fatal("cannot dial mongo", err)
-	}
-	defer db.Close() // clean up when we’re done
-
-	db.SetMode(mgo.Monotonic, true)
-	ensureIndex(db)
 
 	// testing
 	http.HandleFunc("/test/error",
-		Chain(ErrorTest, Method("GET", "POST"), DBSession(db), Logging()))
+		Chain(ErrorTest, Method("GET", "POST"), DBSession(), Logging()))
 	http.HandleFunc("/test/comments",
-		Chain(Comment, Method("GET", "POST"), DBSession(db), Logging()))
+		Chain(Comment, Method("GET", "POST"), DBSession(), Logging()))
 
 	// home page
 	http.HandleFunc("/",
-		Chain(Index, Method("GET"), DBSession(db), Logging()))
+		Chain(Index, Method("GET"), DBSession(), Logging()))
 
 	// login and sign in
 	http.HandleFunc("/register",
-		Chain(Register, Method("GET", "POST"), DBSession(db), Logging()))
+		Chain(Register, Method("GET", "POST"), DBSession(), Logging()))
 	http.HandleFunc("/login",
-		Chain(Login, Method("GET", "POST"), DBSession(db), Logging()))
+		Chain(Login, Method("GET", "POST"), DBSession(), Logging()))
 	http.HandleFunc("/logout",
-		Chain(Logout, Method("GET", "POST"), DBSession(db), Logging()))
+		Chain(Logout, Method("GET", "POST"), DBSession(), Logging()))
 
 	// Restful API
 	http.HandleFunc("/users", Chain(UserApi, Auth(),
-		Method("GET", "POST", "PUT", "DELETE"), DBSession(db), Logging()))
+		Method("GET", "POST", "PUT", "DELETE"), DBSession(), Logging()))
 
 	// shopping cart settlement
 	http.HandleFunc("/cart",

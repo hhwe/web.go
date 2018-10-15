@@ -2,7 +2,6 @@
 package main
 
 import (
-	"gopkg.in/mgo.v2"
 	"net/http"
 	"time"
 )
@@ -40,17 +39,17 @@ func Logging() Middleware {
 
 // DBSession used to add a mongodb session in request context,
 // make sure a request process have a isolated database session
-func DBSession(db *mgo.Session) Middleware {
+func DBSession() Middleware {
 	// return the Adapter
 	return func(f http.HandlerFunc) http.HandlerFunc {
 		// the adapter (when called) should return a new handler
 		return func(w http.ResponseWriter, r *http.Request) {
 			// copy the database session
-			dbsession := db.Copy()
-			defer dbsession.Close() // clean up
+			session := globalSession.Copy()
+			defer session.Close() // clean up
 
 			// save it in the mux context, add to request lifetime
-			context.Set(r, "database", dbsession)
+			context.Set(r, "database", session)
 
 			// pass execution to the original handler
 			f(w, r)
