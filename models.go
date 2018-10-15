@@ -86,7 +86,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	if err := db.DB("web").C("user").Insert(&u); err != nil {
+	if err := Insert(db, "user", &u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -95,20 +95,20 @@ func register(w http.ResponseWriter, r *http.Request) {
 func login(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Session)
 
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := db.DB("web").C("user").Find(bson.M{"username": user.UserName,
-		"password": user.PassWord}).One(&user); err != nil {
+	if err := FindOne(db, "user", bson.M{"username": u.UserName,
+			"password": u.PassWord}, bson.M{}, &u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// note: if this function execute after json encode will not work
-	addCookie(w, "name", user.UserName)
+	addCookie(w, "name", u.UserName)
 
 	if err := json.NewEncoder(w).Encode(user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
