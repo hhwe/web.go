@@ -41,7 +41,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix(
 		"/static/", http.FileServer(http.Dir("static/"))))
 
-	logger.Println(` 
+	logger.Println(`:q
 * Environment: production
   WARNING: Do not use the development server in a production environment.
 * Debug mode: off

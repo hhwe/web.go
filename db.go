@@ -43,9 +43,7 @@ func init() {
 
 // build index of mongodb
 func ensureIndex(s *mgo.Session) {
-	s = globalSession.Copy()
-	defer s.Close()
-
+	// ensure index of collections which name is user
 	c := s.DB(database).C("user")
 	index := mgo.Index{
 		Key:        []string{"email", "phone", "username"},
@@ -59,30 +57,3 @@ func ensureIndex(s *mgo.Session) {
 		panic(err)
 	}
 }
-
-func Insert(s *mgo.Session, collection string, docs ...interface{}) error {
-	c := s.DB(database).C(collection)
-	return c.Insert(docs...)
-}
-
-func FindOne(s *mgo.Session, collection string, query, selector, result interface{}) error {
-	c := s.DB(database).C(collection)
-	return c.Find(query).Select(selector).One(result)
-}
-
-func FindAll(s *mgo.Session, collection string, query, selector, result interface{}) error {
-	c := s.DB(database).C(collection)
-	return c.Find(query).Select(selector).All(result)
-}
-
-func Update(s *mgo.Session, collection string, query, update interface{}) error {
-	c := s.DB(database).C(collection)
-	return c.Update(query, update)
-}
-
-func Remove(s *mgo.Session, collection string, query interface{}) error {
-	c := s.DB(database).C(collection)
-	return c.Remove(query)
-}
-
-

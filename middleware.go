@@ -47,9 +47,10 @@ func DBSession() Middleware {
 			// copy the database session
 			session := globalSession.Copy()
 			defer session.Close() // clean up
+			db := session.DB(database)
 
 			// save it in the mux context, add to request lifetime
-			context.Set(r, "database", session)
+			context.Set(r, "database", db)
 
 			// pass execution to the original handler
 			f(w, r)

@@ -76,12 +76,12 @@ func ErrorTest(w http.ResponseWriter, r *http.Request) {
 func UserApi(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		selectUser(w, r)
+		findUser(w, r)
 	case "POST":
 		insertUser(w, r)
 	case "PUT":
-		putUser(w, r)
+		updateUser(w, r)
 	case "DELETE":
-		deleteUser(w, r)
+		removeUser(w, r)
 	}
 }

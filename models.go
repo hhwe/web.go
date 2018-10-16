@@ -18,7 +18,7 @@ type comment struct {
 }
 
 func handleInsert(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Database)
 
 	// decode the request body
 	var c comment
@@ -30,7 +30,7 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 	c.ID = bson.NewObjectId()
 	c.When = time.Now()
 	// insert it into the database
-	if err := db.DB("web").C("comments").Insert(&c); err != nil {
+	if err := db.C("comments").Insert(&c); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -39,11 +39,11 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRead(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Database)
 	// load the comments
 	var comments []*comment
-	if err := db.DB("web").C("comments").
-		Find(nil).Sort("-when").Limit(100).All(&comments); err != nil {
+	if err := db.C("comments").Find(nil).Sort("-when").
+			Limit(100).All(&comments); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -67,7 +67,7 @@ type User struct {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -86,7 +86,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	if err := Insert(db, "user", &u); err != nil {
+	if err := db.C("user").Insert(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -95,7 +95,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -103,8 +103,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := FindOne(db, "user", bson.M{"username": u.UserName,
-			"password": u.PassWord}, bson.M{}, &u); err != nil {
+	if err := db.C("user").Find(bson.M{"username": u.UserName,
+			"password": u.PassWord}).One(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,12 +120,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 	ResponseWithJson(w, http.StatusCreated, u)
 }
 
-func selectUser(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+func findUser(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Database)
 
 	var users []*User
-	if err := db.DB("web").C("user").
-		Find(nil).Sort("-created").Limit(100).All(&users); err != nil {
+	if err := db.C("user").Find(nil).Sort("-created").
+			Limit(100).All(&users); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -134,7 +134,7 @@ func selectUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func insertUser(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -147,7 +147,7 @@ func insertUser(w http.ResponseWriter, r *http.Request) {
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	if err := Insert(db, "user", &u); err != nil {
+	if err := db.C("user").Insert(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -156,7 +156,7 @@ func insertUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -167,16 +167,16 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		log.Panic("ERROR: need phone and password")
 	}
 
-	u.ID = bson.NewObjectId()
-	u.Created = time.Now()
-	if err := FindOne(db, "user", bson.IsObjectIdHex()); err != nil {
+	if err := db.C("user").Find(bson.M{"id": u.ID}).One(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	ResponseWithJson(w, http.StatusOK, u)
 }
 
-func deleteUser(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Session)
+func removeUser(w http.ResponseWriter, r *http.Request) {
+	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -189,8 +189,10 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	if err := db.DB("web").C("user").Insert(&u); err != nil {
+	if err := db.C("user").RemoveId(u.ID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	ResponseWithJson(w, http.StatusOK, u)
 }
