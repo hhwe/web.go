@@ -23,21 +23,22 @@ var templates = template.Must(template.ParseFiles(
 // logging setting
 var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 
-func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", data)
+func renderTemplate(w http.ResponseWriter, tmpl string) {
+	csrf := addToken()
+	err := templates.ExecuteTemplate(w, tmpl+".html", csrf)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "index", nil)
+	renderTemplate(w, "index")
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		renderTemplate(w, r.URL.Path[1:], nil)
+		renderTemplate(w, r.URL.Path[1:])
 	case "POST":
 		register(w, r)
 	}
@@ -46,18 +47,18 @@ func Register(w http.ResponseWriter, r *http.Request) {
 func Login(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		renderTemplate(w, r.URL.Path[1:], nil)
+		renderTemplate(w, r.URL.Path[1:])
 	case "POST":
 		login(w, r)
 	}
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "index", nil)
+	renderTemplate(w, "index")
 }
 
 func Cart(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, r.URL.Path[1:], nil)
+	renderTemplate(w, r.URL.Path[1:])
 }
 
 func Comment(w http.ResponseWriter, r *http.Request) {

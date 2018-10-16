@@ -26,6 +26,8 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
+
 	// give the comment a unique ID and set the time
 	c.ID = bson.NewObjectId()
 	c.When = time.Now()
@@ -60,10 +62,10 @@ type User struct {
 	Sex      int           `bson:"sex" json:"sex"`
 	Email    string        `bson:"email" json:"email"`
 	Phone    string        `bson:"phone" json:"phone"`
-	Summary  string        `bson:"summary"`
-	UserName string        `bson:"username"`
-	PassWord string        `bson:"password"`
-	Created  time.Time     `bson:"created"`
+	Summary  string        `bson:"summary" json:"summary"`
+	UserName string        `bson:"username" json:"username"`
+	PassWord string        `bson:"password" json:"password"`
+	Created  time.Time     `bson:"created" json:"created"`
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -74,41 +76,48 @@ func register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
 	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
 		http.Error(w, "ERROR: Invalid input", http.StatusBadRequest)
 		//logger.Panic("ERROR: Invalid input")
 		return
 	}
-	if m, _ := regexp.MatchString(`^(1[3|4|5|8][0-9]\d{4,8})$`, u.Phone); !m {
+	if m, _ := regexp.MatchString(`^(1[3458][0-9]\d{4,8})$`, u.Phone); !m {
 		logger.Panic("ERROR: invalid phone")
 	}
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
+	// Prevent plaintext Passwords are stored
+	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Insert(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusCreated, u)
+	ResponseWithJson(w, http.StatusCreated, ResponseCodeText(StatusSuccess), nil)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
+	// todo: verify the validity of data, csrf token
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
+	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Find(bson.M{"username": u.UserName,
 			"password": u.PassWord}).One(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	token:=addToken()
 	// note: if this function execute after json encode will not work
 	addCookie(w, "name", u.UserName)
 
@@ -117,7 +126,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	ResponseWithJson(w, http.StatusCreated, u)
+	ResponseWithJson(w, http.StatusOK, ResponseCodeText(StatusSuccess), token)
 }
 
 func findUser(w http.ResponseWriter, r *http.Request) {
@@ -126,11 +135,12 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 	var users []*User
 	if err := db.C("user").Find(nil).Sort("-created").
 			Limit(100).All(&users); err != nil {
+		logger.Panicln(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusOK, users)
+	ResponseWithJson(w, http.StatusOK, "", users)
 }
 
 func insertUser(w http.ResponseWriter, r *http.Request) {
@@ -141,18 +151,22 @@ func insertUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
+
 	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
 		log.Panic("ERROR: need phone and password")
 	}
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
+	// Prevent plaintext Passwords are stored
+	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Insert(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusCreated, u)
+	ResponseWithJson(w, http.StatusCreated, "", u)
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
@@ -163,16 +177,19 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
+
 	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
 		log.Panic("ERROR: need phone and password")
 	}
-
+	// Prevent plaintext Passwords are stored
+	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Find(bson.M{"id": u.ID}).One(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusOK, u)
+	ResponseWithJson(w, http.StatusOK, "", u)
 }
 
 func removeUser(w http.ResponseWriter, r *http.Request) {
@@ -183,6 +200,8 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
+
 	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
 		log.Panic("ERROR: need phone and password")
 	}
@@ -194,5 +213,5 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ResponseWithJson(w, http.StatusOK, u)
+	ResponseWithJson(w, http.StatusOK, "", u)
 }

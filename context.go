@@ -1,7 +1,11 @@
 package main
 
 import (
+	"crypto/md5"
+	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -81,8 +85,13 @@ func (c *Context) clear(r *http.Request) {
 //	return newRegistry
 //}
 
-// todo: store session on redis
-var sessions = map[string]string{}
+// todo: store session on redis, add expire time to every sessions
+const (
+	sessionToken = iota
+	sessionCookie
+	sessionCRSF
+)
+var sessions = map[int]map[string]string{}
 
 
 // Cookie ---------------------------------------------------------------------
@@ -96,9 +105,10 @@ func addCookie(w http.ResponseWriter, name string, value string) {
 		Value:   value,
 		Expires: expire,
 		Path:    "/",
+		HttpOnly:true,  // can't called by javascript
 	}
 	http.SetCookie(w, &cookie)
-	sessions[name] = value
+	sessions[sessionCookie][name] = value
 }
 
 // validate cookie from request of current request
@@ -109,8 +119,22 @@ func validCookie(r *http.Request, name string) bool {
 	}
 
 	// check cookie's value is valid and in sessions
-	if sessions[cookie.Name] == cookie.Value {
+	if sessions[sessionCookie][cookie.Name] == cookie.Value {
 		return true
 	}
 	return false
+}
+
+
+// Token ----------------------------------------------------------------------
+
+// Generates a random number for prevention CSRF
+func addToken() (token string) {
+	h := md5.New()
+	currentTime := time.Now().Unix()
+	io.WriteString(h, strconv.FormatInt(currentTime, 10))
+	io.WriteString(h, HashSha256("token"))
+	token = fmt.Sprintf("%x", h.Sum(nil))
+	sessions[sessionToken]["jwt"] = token
+	return
 }

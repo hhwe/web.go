@@ -98,6 +98,13 @@ func Auth() Middleware {
 
 		// Define the http.HandlerFunc
 		return func(w http.ResponseWriter, r *http.Request) {
+			token := r.Header.Get("authorization")
+			if token == "" {
+				ResponseWithJson(w, http.StatusUnauthorized,
+					http.StatusText(http.StatusUnauthorized), nil )
+			} else {
+				// todo: parse token
+			}
 			if !validCookie(r, "name") {
 				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 				return
