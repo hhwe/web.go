@@ -23,12 +23,7 @@ func Logging() Middleware {
 				logger.Println(r.Method, r.URL.Path, time.Since(start))
 			}()
 
-			defer func() {
-				e := recover()
-				if e != nil {
-					http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				}
-			}()
+			defer Recovery(w)
 
 			// Call the next middleware/handler in chain
 			f(w, r)
@@ -100,13 +95,12 @@ func Auth() Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			token := r.Header.Get("authorization")
 			if token == "" {
-				ResponseWithJson(w, http.StatusUnauthorized,
-					http.StatusText(http.StatusUnauthorized), nil )
+				ResponseWithJson(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized, nil )
 			} else {
 				// todo: parse token
 			}
 			if !validCookie(r, "name") {
-				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				ResponseWithJson(w, http.StatusText(http.StatusForbidden), http.StatusForbidden, nil)
 				return
 			}
 

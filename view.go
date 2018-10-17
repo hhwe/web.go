@@ -24,7 +24,7 @@ var templates = template.Must(template.ParseFiles(
 var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 
 func renderTemplate(w http.ResponseWriter, tmpl string) {
-	csrf := addToken()
+	csrf := addToken("csrf")
 	err := templates.ExecuteTemplate(w, tmpl+".html", csrf)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

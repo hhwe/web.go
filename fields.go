@@ -26,7 +26,10 @@ type Response struct {
 	Data interface{} `json:"data"`
 }
 
-func ResponseWithJson(w http.ResponseWriter, code int, msg string, data interface{}) {
+// ResponseWithJson replies to the request with the specified message and HTTP code.
+// It does not otherwise end the request; the caller should ensure no further
+// writes are done to w.
+func ResponseWithJson(w http.ResponseWriter, msg string, code int, data interface{}) {
 	response := Response{
 		Code:code,
 		Msg:msg,
@@ -36,7 +39,7 @@ func ResponseWithJson(w http.ResponseWriter, code int, msg string, data interfac
 	if err != nil {
 		logger.Panicln(err)
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
 	w.Write(payload)
 }

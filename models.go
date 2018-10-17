@@ -23,7 +23,7 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 	// decode the request body
 	var c comment
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	defer r.Body.Close()
@@ -33,7 +33,7 @@ func handleInsert(w http.ResponseWriter, r *http.Request) {
 	c.When = time.Now()
 	// insert it into the database
 	if err := db.C("comments").Insert(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	//// redirect to it
@@ -46,12 +46,12 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 	var comments []*comment
 	if err := db.C("comments").Find(nil).Sort("-when").
 			Limit(100).All(&comments); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	// write it out
 	if err := json.NewEncoder(w).Encode(comments); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 }
@@ -73,13 +73,13 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	defer r.Body.Close()
 
 	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
-		http.Error(w, "ERROR: Invalid input", http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		//logger.Panic("ERROR: Invalid input")
 		return
 	}
@@ -92,11 +92,11 @@ func register(w http.ResponseWriter, r *http.Request) {
 	// Prevent plaintext Passwords are stored
 	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Insert(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusCreated, ResponseCodeText(StatusSuccess), nil)
+	ResponseWithJson(w, ResponseCodeText(StatusSuccess), http.StatusCreated, nil)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +105,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	var u User
 	// todo: verify the validity of data, csrf token
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	defer r.Body.Close()
@@ -113,20 +113,20 @@ func login(w http.ResponseWriter, r *http.Request) {
 	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Find(bson.M{"username": u.UserName,
 			"password": u.PassWord}).One(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "user not fount", http.StatusBadRequest, nil)
 		return
 	}
 
-	token:=addToken()
+	token := addToken(u.UserName)
 	// note: if this function execute after json encode will not work
 	addCookie(w, "name", u.UserName)
 
 	//if err := json.NewEncoder(w).Encode(user); err != nil {
-	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//	ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 	//	return
 	//}
 
-	ResponseWithJson(w, http.StatusOK, ResponseCodeText(StatusSuccess), token)
+	ResponseWithJson(w, ResponseCodeText(StatusSuccess), http.StatusOK, token)
 }
 
 func findUser(w http.ResponseWriter, r *http.Request) {
@@ -136,11 +136,11 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 	if err := db.C("user").Find(nil).Sort("-created").
 			Limit(100).All(&users); err != nil {
 		logger.Panicln(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusOK, "", users)
+	ResponseWithJson(w, "", http.StatusOK, users)
 }
 
 func insertUser(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +148,7 @@ func insertUser(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	defer r.Body.Close()
@@ -162,11 +162,11 @@ func insertUser(w http.ResponseWriter, r *http.Request) {
 	// Prevent plaintext Passwords are stored
 	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Insert(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusCreated, "", u)
+	ResponseWithJson(w, "", http.StatusCreated, u)
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +174,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	defer r.Body.Close()
@@ -185,11 +185,11 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	// Prevent plaintext Passwords are stored
 	u.PassWord = HashSha256(u.PassWord)
 	if err := db.C("user").Find(bson.M{"id": u.ID}).One(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusOK, "", u)
+	ResponseWithJson(w, "", http.StatusOK, u)
 }
 
 func removeUser(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +197,7 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 	defer r.Body.Close()
@@ -209,9 +209,9 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
 	if err := db.C("user").RemoveId(u.ID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
 		return
 	}
 
-	ResponseWithJson(w, http.StatusOK, "", u)
+	ResponseWithJson(w, "", http.StatusOK, u)
 }

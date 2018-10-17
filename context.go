@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+
 // Context --------------------------------------------------------------------
 
 // app context split by request
@@ -63,27 +64,8 @@ func (c *Context) clear(r *http.Request) {
 	delete(c.Data, r)
 }
 
-// Session --------------------------------------------------------------------
 
-//// Session stores the values and optional configuration for a session.
-//type Session struct {
-//	ID     string                      // The ID of the session.
-//	Values map[interface{}]interface{} // Values contains in the session.
-//}
-//
-//// GetRegistry returns a registry instance for the current request.
-//func GetRegistry(r *http.Request) *Registry {
-//	registry := context.Get(r, "session")
-//	if registry != nil {
-//		return registry.(*Registry)
-//	}
-//	newRegistry := &Registry{
-//		request:  r,
-//		sessions: make(map[string]sessionInfo),
-//	}
-//	context.Set(r, registryKey, newRegistry)
-//	return newRegistry
-//}
+// Session --------------------------------------------------------------------
 
 // todo: store session on redis, add expire time to every sessions
 const (
@@ -108,7 +90,7 @@ func addCookie(w http.ResponseWriter, name string, value string) {
 		HttpOnly:true,  // can't called by javascript
 	}
 	http.SetCookie(w, &cookie)
-	sessions[sessionCookie][name] = value
+	sessions[sessionCookie] = map[string]string{name:value}
 }
 
 // validate cookie from request of current request
@@ -120,6 +102,7 @@ func validCookie(r *http.Request, name string) bool {
 
 	// check cookie's value is valid and in sessions
 	if sessions[sessionCookie][cookie.Name] == cookie.Value {
+		logger.Println("Warning: login error")
 		return true
 	}
 	return false
@@ -129,12 +112,12 @@ func validCookie(r *http.Request, name string) bool {
 // Token ----------------------------------------------------------------------
 
 // Generates a random number for prevention CSRF
-func addToken() (token string) {
+func addToken(name string) (token string) {
 	h := md5.New()
 	currentTime := time.Now().Unix()
 	io.WriteString(h, strconv.FormatInt(currentTime, 10))
 	io.WriteString(h, HashSha256("token"))
 	token = fmt.Sprintf("%x", h.Sum(nil))
-	sessions[sessionToken]["jwt"] = token
+	sessions[sessionToken] =map[string]string{name:token}
 	return
 }
