@@ -1,8 +1,8 @@
-# 实效Go编程
+# Effective Go
 
 <!-- TOC -->
 
-- [实效Go编程](#实效go编程)
+- [Effective Go](#effective-go)
     - [引言](#引言)
         - [示例](#示例)
     - [格式化](#格式化)
@@ -41,6 +41,27 @@
         - [指针 vs. 值](#指针-vs-值)
     - [接口与其它类型](#接口与其它类型)
         - [接口](#接口)
+        - [类型转换](#类型转换)
+        - [接口转换与类型断言](#接口转换与类型断言)
+        - [通用性](#通用性)
+        - [接口和方法](#接口和方法)
+    - [空白标识符](#空白标识符)
+        - [多重赋值中的空白标识符](#多重赋值中的空白标识符)
+        - [未使用的导入和变量](#未使用的导入和变量)
+        - [为副作用而导入](#为副作用而导入)
+        - [接口检查](#接口检查)
+    - [内嵌](#内嵌)
+    - [并发](#并发)
+        - [通过通信共享内存](#通过通信共享内存)
+        - [goroutine](#goroutine)
+        - [信道](#信道)
+        - [信道中的信道](#信道中的信道)
+        - [并行化](#并行化)
+        - [可能泄露的缓冲区](#可能泄露的缓冲区)
+    - [错误](#错误)
+        - [Panic](#panic)
+        - [恢复](#恢复)
+    - [一个Web服务器](#一个web服务器)
 
 <!-- /TOC -->
 
@@ -1259,7 +1280,7 @@ func init() {
 type ByteSlice []byte
 
 func (slice ByteSlice) Append(data []byte) []byte {
-	// 主体和前面相同。
+    // Body exactly the same as the Append function defined above.
 }
 ```
 
@@ -1267,9 +1288,9 @@ func (slice ByteSlice) Append(data []byte) []byte {
 
 ```go
 func (p *ByteSlice) Append(data []byte) {
-	slice := *p
-	// 主体和前面相同，但没有 return。
-	*p = slice
+    slice := *p
+    // Body as above, without the return.
+    *p = slice
 }
 ```
 
@@ -1277,10 +1298,10 @@ func (p *ByteSlice) Append(data []byte) {
 
 ```go
 func (p *ByteSlice) Write(data []byte) (n int, err error) {
-	slice := *p
-	// 依旧和前面相同。
-	*p = slice
-	return len(data), nil
+    slice := *p
+    // Again as above.
+    *p = slice
+    return len(data), nil
 }
 ```
 
@@ -1309,7 +1330,6 @@ Go中的接口为指定对象的行为提供了一种方法：如果某样东西
 type Sequence []int
 
 // Methods required by sort.Interface.
-// sort.Interface 所需的方法。
 func (s Sequence) Len() int {
     return len(s)
 }
@@ -1321,7 +1341,6 @@ func (s Sequence) Swap(i, j int) {
 }
 
 // Method for printing - sorts the elements before printing.
-// 用于打印的方法 - 在打印前对元素进行排序。
 func (s Sequence) String() string {
     sort.Sort(s)
     str := "["
@@ -1332,7 +1351,8 @@ func (s Sequence) String() string {
         str += fmt.Sprint(elem)
     }
     return str + "]"
-}```
+}
+```
 
 ### 类型转换
 
@@ -1352,10 +1372,10 @@ func (s Sequence) String() string {
 ```go
 type Sequence []int
 
-// // 用于打印的方法 - 在打印前对元素进行排序。
+// Method for printing - sorts the elements before printing
 func (s Sequence) String() string {
-	sort.IntSlice(s).Sort()
-	return fmt.Sprint([]int(s))
+    sort.IntSlice(s).Sort()
+    return fmt.Sprint([]int(s))
 }
 ```
 
@@ -1363,19 +1383,19 @@ func (s Sequence) String() string {
 
 ### 接口转换与类型断言
 
-[类型选择](https://golang.org/doc/effective_go.html#%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9)是类型转换的一种形式：它接受一个接口，在选择 （`switch`）中根据其判断选择对应的情况（`case`）， 并在某种意义上将其转换为该种类型。以下代码为 `fmt.Printf` 通过类型选择将值转换为字符串的简化版。若它已经为字符串，我们需要该接口中实际的字符串值； 若它有 `String` 方法，我们则需要调用该方法所得的结果。
+[类型选择](https://golang.org/doc/effective_go.html#type_switch)是类型转换的一种形式：它接受一个接口，在选择 （`switch`）中根据其判断选择对应的情况（`case`）， 并在某种意义上将其转换为该种类型。以下代码为 `fmt.Printf` 通过类型选择将值转换为字符串的简化版。若它已经为字符串，我们需要该接口中实际的字符串值； 若它有 `String` 方法，我们则需要调用该方法所得的结果。
 
 ```go
 type Stringer interface {
-	String() string
+    String() string
 }
 
-var value interface{} // 调用者提供的值。
+var value interface{} // Value provided by caller.
 switch str := value.(type) {
 case string:
-	return str
+    return str
 case Stringer:
-	return str.String()
+    return str.String()
 }
 ```
 
@@ -1398,9 +1418,9 @@ str := value.(string)
 ```go
 str, ok := value.(string)
 if ok {
-	fmt.Printf("字符串值为 %q\n", str)
+    fmt.Printf("string value is: %q\n", str)
 } else {
-	fmt.Printf("该值非字符串\n")
+    fmt.Printf("value is not a string\n")
 }
 ```
 
@@ -1441,8 +1461,8 @@ type Stream interface {
 这是计数器模式CTR流的定义，它将块加密改为流加密，注意块加密的细节已被抽象化了。
 
 ```go
-`// NewCTR 返回一个 Stream，其加密/解密使用计数器模式中给定的 Block 进行。
-// iv 的长度必须与 Block 的块大小相同。
+// NewCTR returns a Stream that encrypts/decrypts using the given Block in
+// counter mode. The length of iv must be the same as the Block's block size.
 func NewCTR(block Block, iv []byte) Stream
 ```
 
@@ -1463,14 +1483,14 @@ type Handler interface {
 为简单起见，我们假设所有的HTTP请求都是GET方法，而忽略POST方法， 这种简化不会影响处理程序的建立方式。这里有个短小却完整的处理程序实现， 它用于记录某个页面被访问的次数。
 
 ```go
-`// 简单的计数器服务。
+// Simple counter server.
 type Counter struct {
-	n int
+    n int
 }
 
 func (ctr *Counter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ctr.n++
-	fmt.Fprintf(w, "counter = %d\n", ctr.n)
+    ctr.n++
+    fmt.Fprintf(w, "counter = %d\n", ctr.n)
 }
 ```
 
@@ -1483,28 +1503,28 @@ ctr := new(Counter)
 http.Handle("/counter", ctr)
 ```
 
-但为什么 `Counter` 要是结构体呢？一个整数就够了。 An integer is all that's needed. （接收者必须为指针，增量操作对于调用者才可见。）
+但为什么 `Counter` 要是结构体呢？一个整数就够了。（接收者必须为指针，增量操作对于调用者才可见。）
 
 ```go
-`// 简单的计数器服务。
+// Simpler counter server.
 type Counter int
 
 func (ctr *Counter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	*ctr++
-	fmt.Fprintf(w, "counter = %d\n", *ctr)
+    *ctr++
+    fmt.Fprintf(w, "counter = %d\n", *ctr)
 }
 ```
 
 当页面被访问时，怎样通知你的程序去更新一些内部状态呢？为Web页面绑定个信道吧。
 
 ```go
-`// 每次浏览该信道都会发送一个提醒。
-// （可能需要带缓冲的信道。）
+// A channel that sends a notification on each visit.
+// (Probably want the channel to be buffered.)
 type Chan chan *http.Request
 
 func (ch Chan) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ch <- req
-	fmt.Fprint(w, "notification sent")
+    ch <- req
+    fmt.Fprint(w, "notification sent")
 }
 ```
 
@@ -1519,13 +1539,15 @@ func ArgServer() {
 我们如何将它转换为HTTP服务器呢？我们可以将 `ArgServer` 实现为某种可忽略值的方法，不过还有种更简单的方法。 既然我们可以为除指针和接口以外的任何类型定义方法，同样也能为一个函数写一个方法。 `http` 包包含以下代码：
 
 ```go
-`// HandlerFunc 类型是一个适配器，它允许将普通函数用做HTTP处理程序。
-// 若 f 是个具有适当签名的函数，HandlerFunc(f) 就是个调用 f 的处理程序对象。
+// The HandlerFunc type is an adapter to allow the use of
+// ordinary functions as HTTP handlers.  If f is a function
+// with the appropriate signature, HandlerFunc(f) is a
+// Handler object that calls f.
 type HandlerFunc func(ResponseWriter, *Request)
 
-// ServeHTTP calls f(c, req).
+// ServeHTTP calls f(w, req).
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, req *Request) {
-	f(w, req)
+    f(w, req)
 }
 ```
 
@@ -1534,9 +1556,9 @@ func (f HandlerFunc) ServeHTTP(w ResponseWriter, req *Request) {
 为了将 `ArgServer` 实现成HTTP服务器，首先我们得让它拥有合适的签名。
 
 ```go
-`// 实参服务器。
+// Argument server.
 func ArgServer(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, os.Args)
+    fmt.Fprintln(w, os.Args)
 }
 ```
 
@@ -1552,7 +1574,7 @@ http.Handle("/args", http.HandlerFunc(ArgServer))
 
 ## 空白标识符
 
-我们在 [`for-range` 循环](https://golang.org/doc/effective_go.html#for)和[映射](https://golang.org/doc/effective_go.html#%E6%98%A0%E5%B0%84)中提过几次空白标识符。 空白标识符可被赋予或声明为任何类型的任何值，而其值会被无害地丢弃。它有点像Unix中的 `/dev/null` 文件：它表示只写的值，在需要变量但不需要实际值的地方用作占位符。 我们在前面已经见过它的用法了。
+我们在 [`for-range` 循环](https://golang.org/doc/effective_go.html#for)和[映射](https://golang.org/doc/effective_go.html#maps)中提过几次空白标识符。 空白标识符可被赋予或声明为任何类型的任何值，而其值会被无害地丢弃。它有点像Unix中的 `/dev/null` 文件：它表示只写的值，在需要变量但不需要实际值的地方用作占位符。 我们在前面已经见过它的用法了。
 
 ### 多重赋值中的空白标识符
 
@@ -1569,10 +1591,10 @@ if _, err := os.Stat(path); os.IsNotExist(err) {
 你偶尔会看见为忽略错误而丢弃错误值的代码，这是种糟糕的实践。请务必检查错误返回， 它们会提供错误的理由。
 
 ```go
-`// 烂代码！若路径不存在，它就会崩溃。
+// Bad! This code will crash if path does not exist.
 fi, _ := os.Stat(path)
 if fi.IsDir() {
-	fmt.Printf("%s is a directory\n", path)
+    fmt.Printf("%s is a directory\n", path)
 }
 ```
 
@@ -1598,7 +1620,8 @@ func main() {
         log.Fatal(err)
     }
     // TODO: use fd.
-}```
+}
+```
 
 要让编译器停止关于未使用导入的抱怨，需要空白标识符来引用已导入包中的符号。 同样，将未使用的变量 `fd` 赋予空白标识符也能关闭未使用变量错误。 该程序的以下版本可以编译。
 
@@ -1612,8 +1635,8 @@ import (
     "os"
 )
 
-var _ = fmt.Printf // For debugging; delete when done. // 用于调试，结束时删除。
-var _ io.Reader    // For debugging; delete when done. // 用于调试，结束时删除。
+var _ = fmt.Printf // For debugging; delete when done.
+var _ io.Reader    // For debugging; delete when done.
 
 func main() {
     fd, err := os.Open("test.go")
@@ -1622,7 +1645,8 @@ func main() {
     }
     // TODO: use fd.
     _ = fd
-}```
+}
+```
 
 按照惯例，我们应在导入并加以注释后，再使全局声明导入错误静默，这样可以让它们更易找到， 并作为以后清理它的提醒。
 
@@ -1638,9 +1662,9 @@ import _ "net/http/pprof"
 
 ### 接口检查
 
-就像我们在前面[接口](https://golang.org/doc/effective_go.html#%E6%8E%A5%E5%8F%A3%E4%B8%8E%E7%B1%BB%E5%9E%8B)中讨论的那样， 一个类型无需显式地声明它实现了某个接口。取而代之，该类型只要实现了某个接口的方法， 其实就实现了该接口。在实践中，大部分接口转换都是静态的，因此会在编译时检测。 例如，将一个 `*os.File` 传入一个预期的 `io.Reader` 函数将不会被编译， 除非 `*os.File` 实现了 `io.Reader` 接口。
+就像我们在前面[接口](https://golang.org/doc/effective_go.html#interfaces)中讨论的那样， 一个类型无需显式地声明它实现了某个接口。取而代之，该类型只要实现了某个接口的方法， 其实就实现了该接口。在实践中，大部分接口转换都是静态的，因此会在编译时检测。 例如，将一个 `*os.File` 传入一个预期的 `io.Reader` 函数将不会被编译， 除非 `*os.File` 实现了 `io.Reader` 接口。
 
-尽管有些接口检查会在运行时进行。`[encoding/json](https://golang.org/pkg/encoding/json/)` 包中就有个实例它定义了一个 `[Marshaler](https://golang.org/pkg/encoding/json/#Marshaler)` 接口。当JSON编码器接收到一个实现了该接口的值，那么该编码器就会调用该值的编组方法， 将其转换为JSON，而非进行标准的类型转换。 编码器在运行时通过[类型断言](https://golang.org/doc/effective_go.html#%E6%8E%A5%E5%8F%A3%E8%BD%AC%E6%8D%A2)检查其属性，就像这样：
+尽管有些接口检查会在运行时进行。`[encoding/json](https://golang.org/pkg/encoding/json/)` 包中就有个实例它定义了一个 `[Marshaler](https://golang.org/pkg/encoding/json/#Marshaler)` 接口。当JSON编码器接收到一个实现了该接口的值，那么该编码器就会调用该值的编组方法， 将其转换为JSON，而非进行标准的类型转换。 编码器在运行时通过[类型断言](https://golang.org/doc/effective_go.html#type_assertion)检查其属性，就像这样：
 
 ```go
 m, ok := val.(json.Marshaler)
@@ -1683,10 +1707,10 @@ type Writer interface {
 `io` 包也导出了一些其它接口，以此来阐明对象所需实现的方法。 例如 `io.ReadWriter` 就是个包含 `Read` 和 `Write` 的接口。我们可以通过显示地列出这两个方法来指明 `io.ReadWriter`， 但通过将这两个接口内嵌到新的接口中显然更容易且更具启发性，就像这样：
 
 ```go
-`// ReadWriter 接口结合了 Reader 和 Writer 接口。
+// ReadWriter is the interface that combines the Reader and Writer interfaces.
 type ReadWriter interface {
-	Reader
-	Writer
+    Reader
+    Writer
 }
 ```
 
@@ -1695,11 +1719,11 @@ type ReadWriter interface {
 同样的基本想法可以应用在结构体中，但其意义更加深远。`bufio` 包中有 `bufio.Reader` 和 `bufio.Writer` 这两个结构体类型， 它们每一个都实现了与 `io` 包中相同意义的接口。此外，`bufio` 还通过结合 `reader/writer` 并将其内嵌到结构体中，实现了带缓冲的 `reader/writer`：它列出了结构体中的类型，但并未给予它们字段名。
 
 ```go
-`// ReadWriter 存储了指向 Reader 和 Writer 的指针。
-// 它实现了 io.ReadWriter。
+// ReadWriter stores pointers to a Reader and a Writer.
+// It implements io.ReadWriter.
 type ReadWriter struct {
-	*Reader  // *bufio.Reader
-	*Writer  // *bufio.Writer
+    *Reader  // *bufio.Reader
+    *Writer  // *bufio.Writer
 }
 ```
 
@@ -1771,34 +1795,34 @@ func (job *Job) Logf(format string, args ...interface{}) {
 
 并发编程是个很大的论题。但限于篇幅，这里仅讨论一些Go特有的东西。
 
-在并发编程中，为实现对共享变量的正确访问需要精确的控制，这在多数环境下都很困难。 Go语言另辟蹊径，它将共享的值通过信道传递，实际上，多个独立执行的线程从不会主动共享。 在任意给定的时间点，只有一个Go程能够访问该值。数据竞争从设计上就被杜绝了。 为了提倡这种思考方式，我们将它简化为一句口号：
+在并发编程中，为实现对共享变量的正确访问需要精确的控制，这在多数环境下都很困难。 Go语言另辟蹊径，它将共享的值通过信道传递，实际上，多个独立执行的线程从不会主动共享。 在任意给定的时间点，只有一个goroutine能够访问该值。数据竞争问题在设计上就被规避了。 为了提倡这种思考方式，我们将它简化为一句口号：
 
-> 不要通过共享内存来通信，而应通过通信来共享内存。
+> 不要通过共享内存来通信，而应通过通信来实现共享内存。
 
 这种方法意义深远。例如，引用计数通过为整数变量添加互斥锁来很好地实现。 但作为一种高级方法，通过信道来控制访问能够让你写出更简洁，正确的程序。
 
-我们可以从典型的单线程运行在单CPU之上的情形来审视这种模型。它无需提供同步原语。 现在考虑另一种情况，它也无需同步。现在让它们俩进行通信。若将通信过程看做同步着， 那就完全不需要其它同步了。例如，Unix管道就与这种模型完美契合。 尽管Go的并发处理方式来源于Hoare的通信顺序处理（CSP）， 它依然可以看做是类型安全的Unix管道的实现。
+试着用下面的方法来分析上述模型：想象我们只是在处理传统的单线程程序，该程序仅运行在一个物理CPU上。基于这个前提进行开发，是无需提供任何同步原语的。现在，启动另一个类似的实例；它同样也不需要任何同步原语。然后让这两个实例进行通信；如果将通信本身算作一种同步原语，那么它是系统中仅有的同步原语。Unix操作系统的管道（Pipeline）就是上述模型的一个很好实例。尽管Go语言的并发模型源自Hoare的CSP模型 （Communicating Sequential Processes, 国内译为“通信顺序进程”，台湾译为“交谈循序程序”），但它也可以被看成是一种类型安全的、一般化的Unix管道。
 
-### Go程
+### goroutine
 
-我们称之为**Go程**是因为现有的术语—线程、协程、进程等等—无法准确传达它的含义。 Go程具有简单的模型：它是与其它Go程并发运行在同一地址空间的函数。它是轻量级的， 所有小号几乎就只有栈空间的分配。而且栈最开始是非常小的，所以它们很廉价， 仅在需要时才会随着堆空间的分配（和释放）而变化。
+我们之所以称之为**goroutine**是因为现有的术语—线程、协程、进程等等—无法准确传达它的含义。 goroutine具有简单的模型：它是与其它goroutine并发运行在同一地址空间的函数。它是轻量级的， 所有消耗几乎就只有栈空间的分配。而且栈最开始是非常小的，所以它们很廉价， 仅在需要时才会随着堆空间的分配（和释放）而变化。
 
-Go程在多线程操作系统上可实现多路复用，因此若一个线程阻塞，比如说等待I/O， 那么其它的线程就会运行。Go程的设计隐藏了线程创建和管理的诸多复杂性。
+goroutine在多线程操作系统上可实现多路复用，因此若一个线程阻塞，比如说等待I/O， 那么其它的线程就会运行。goroutine的设计隐藏了线程创建和管理的诸多复杂性。
 
-在函数或方法前添加 `go` 关键字能够在新的Go程中调用它。当调用完成后， 该Go程也会安静地退出。（效果有点像Unix Shell中的 `&` 符号，它能让命令在后台运行。）
+在函数或方法前添加 `go` 关键字能够在新的goroutine中调用它。当调用完成后， 该goroutine也会安静地退出。（效果有点像Unix Shell中的 `&` 符号，它能让命令在后台运行。）
 
 ```go
-go list.Sort()  // 并发运行 list.Sort，无需等它结束。
+go list.Sort()  // run list.Sort concurrently; don't wait for it.
 ```
 
-函数字面在Go程调用中非常有用。
+函数字面在goroutine调用中非常有用。
 
 ```go
 func Announce(message string, delay time.Duration) {
-	go func() {
-		time.Sleep(delay)
-		fmt.Println(message)
-	}()  // 注意括号 - 必须调用该函数。
+    go func() {
+        time.Sleep(delay)
+        fmt.Println(message)
+    }()  // Note the parentheses - must call the function.
 }
 ```
 
@@ -1811,24 +1835,24 @@ func Announce(message string, delay time.Duration) {
 信道与映射一样，也需要通过 `make` 来分配内存。其结果值充当了对底层数据结构的引用。 若提供了一个可选的整数形参，它就会为该信道设置缓冲区大小。默认值是零，表示不带缓冲的或同步的信道。
 
 ```go
-ci := make(chan int)            // 整数类型的无缓冲信道
-cj := make(chan int, 0)         // 整数类型的无缓冲信道
-cs := make(chan *os.File, 100)  // 指向文件指针的带缓冲信道
+ci := make(chan int)            // unbuffered channel of integers
+cj := make(chan int, 0)         // unbuffered channel of integers
+cs := make(chan *os.File, 100)  // buffered channel of pointers to Files
 ```
 
-无缓冲信道在通信时会同步交换数据，它能确保（两个Go程的）计算处于确定状态。
+无缓冲信道在通信时会同步交换数据，它能确保（两个goroutine的）计算处于确定状态。
 
-信道有很多惯用法，我们从这里开始了解。在上一节中，我们在后台启动了排序操作。 信道使得启动的Go程等待排序完成。
+信道有很多惯用法，我们从这里开始了解。在上一节中，我们在后台启动了排序操作。 信道使得启动的goroutine等待排序完成。
 
 ```go
-c := make(chan int)  // 分配一个信道
-// 在Go程中启动排序。当它完成后，在信道上发送信号。
+c := make(chan int)  // Allocate a channel.
+// Start the sort in a goroutine; when it completes, signal on the channel.
 go func() {
-	list.Sort()
-	c <- 1  // 发送信号，什么值无所谓。
+    list.Sort()
+    c <- 1  // Send a signal; value does not matter.
 }()
 doSomethingForAWhile()
-<-c   // 等待排序结束，丢弃发来的值。
+<-c   // Wait for sort to finish; discard sent value.
 ```
 
 接收者在收到数据前会一直阻塞。若信道是不带缓冲的，那么在接收者收到值前， 发送者会一直阻塞；若信道是带缓冲的，则发送者仅在值被复制到缓冲区前阻塞； 若缓冲区已满，发送者会一直等待直到某个接收者取出一个值为止。
@@ -1839,35 +1863,36 @@ doSomethingForAWhile()
 var sem = make(chan int, MaxOutstanding)
 
 func handle(r *Request) {
-	sem <- 1 // 等待活动队列清空。
-	process(r)  // 可能需要很长时间。
-	<-sem    // 完成；使下一个请求可以运行。
+    sem <- 1    // Wait for active queue to drain.
+    process(r)  // May take a long time.
+    <-sem       // Done; enable next request to run.
 }
 
 func Serve(queue chan *Request) {
-	for {
-		req := <-queue
-		go handle(req)  // 无需等待 handle 结束。
-	}
+    for {
+        req := <-queue
+        go handle(req)  // Don't wait for handle to finish.
+    }
 }
 ```
 
 由于数据同步发生在信道的接收端（也就是说发送**发生在**>接受**之前**，参见 [Go内存模型](https://golang.org/ref/mem)），因此信号必须在信道的接收端获取，而非发送端。
 
-然而，它却有个设计问题：尽管只有 `MaxOutstanding` 个Go程能同时运行，但 `Serve` 还是为每个进入的请求都创建了新的Go程。其结果就是，若请求来得很快， 该程序就会无限地消耗资源。为了弥补这种不足，我们可以通过修改 `Serve` 来限制创建Go程，这是个明显的解决方案，但要当心我们修复后出现的Bug。
+然而，它却有个设计问题：尽管只有 `MaxOutstanding` 个goroutine能同时运行，但 `Serve` 还是为每个进入的请求都创建了新的goroutine。其结果就是，若请求来得很快， 该程序就会无限地消耗资源。为了弥补这种不足，我们可以通过修改 `Serve` 来限制创建goroutine，这是个明显的解决方案，但要当心我们修复后出现的Bug。
 
 ```go
 func Serve(queue chan *Request) {
-	for req := range queue {
-		sem <- 1
-		go func() {
-			process(req) // 这儿有Bug，解释见下。
-			<-sem
-		}()
-	}
-}```
+    for req := range queue {
+        sem <- 1
+        go func() {
+            process(req) // Buggy; see explanation below.
+            <-sem
+        }()
+    }
+}
+```
 
-Bug出现在Go的 `for` 循环中，该循环变量在每次迭代时会被重用，因此 `req` 变量会在所有的Go程间共享，这不是我们想要的。我们需要确保 `req`对于每个Go程来说都是唯一的。有一种方法能够做到，就是将 `req` 的值作为实参传入到该Go程的闭包中：
+Bug出现在Go的 `for` 循环中，该循环变量在每次迭代时会被重用，因此 `req` 变量会在所有的goroutine间共享，这不是我们想要的。我们需要确保 `req`对于每个Go程来说都是唯一的。有一种方法能够做到，就是将 `req` 的值作为实参传入到该Go程的闭包中：
 
 ```go
 func Serve(queue chan *Request) {
@@ -1878,20 +1903,21 @@ func Serve(queue chan *Request) {
 			<-sem
 		}(req)
 	}
-}```
+}
+```
 
 比较前后两个版本，观察该闭包声明和运行中的差别。 另一种解决方案就是以相同的名字创建新的变量，如例中所示：
 
 ```go
 func Serve(queue chan *Request) {
-	for req := range queue {
-		req := req // 为该Go程创建 req 的新实例。
-		sem <- 1
-		go func() {
-			process(req)
-			<-sem
-		}()
-	}
+    for req := range queue {
+        req := req // Create new instance of req for the goroutine.
+        sem <- 1
+        go func() {
+            process(req)
+            <-sem
+        }()
+    }
 }
 ```
 
@@ -1901,9 +1927,9 @@ func Serve(queue chan *Request) {
 req := req
 ```
 
-但在Go中这样做是合法且惯用的。你用相同的名字获得了该变量的一个新的版本， 以此来局部地刻意屏蔽循环变量，使它对每个Go程保持唯一。
+但在Go中这样做是合法且惯用的。你用相同的名字获得了该变量的一个新的版本， 以此来局部地刻意屏蔽循环变量，使它对每个goroutine保持唯一。
 
-回到编写服务器的一般问题上来。另一种管理资源的好方法就是启动固定数量的 `handle` Go程，一起从请求信道中读取数据。Go程的数量限制了同时调用 `process` 的数量。`Serve` 同样会接收一个通知退出的信道， 在启动所有Go程后，它将阻塞并暂停从信道中接收消息。
+回到编写服务器的一般问题上来。另一种管理资源的好方法就是启动固定数量的 `handle` goroutine，一起从请求信道中读取数据。goroutine的数量限制了同时调用 `process` 的数量。`Serve` 同样会接收一个通知退出的信道， 在启动所有goroutine后，它将阻塞并暂停从信道中接收消息。
 
 ```go
 func handle(queue chan *Request) {
@@ -1939,20 +1965,20 @@ type Request struct {
 
 ```go
 func sum(a []int) (s int) {
-	for _, v := range a {
-		s += v
-	}
-	return
+    for _, v := range a {
+        s += v
+    }
+    return
 }
 
 request := &Request{[]int{3, 4, 5}, sum, make(chan int)}
-// 发送请求
+// Send request
 clientRequests <- request
-// 等待回应
+// Wait for response.
 fmt.Printf("answer: %d\n", <-request.resultChan)
 ```
 
-On the server side, the handler function is the only thing that changes.
+另一方面, 服务器端只需修改的 `handle` 函数
 
 ```go
 func handle(queue chan *Request) {
@@ -1962,7 +1988,7 @@ func handle(queue chan *Request) {
 }
 ```
 
-要使其实际可用还有很多工作要做，这些代码仅能实现一个速率有限、并行、非阻塞RPC系统的 框架，而且它并不包含互斥锁。
+要使其实际可用还有很多工作要做，这些代码仅能实现一个速率有限、并行、非阻塞RPC系统的框架，而且它并不包含互斥锁。
 
 ### 并行化
 
@@ -1973,59 +1999,59 @@ func handle(queue chan *Request) {
 ```go
 type Vector []float64
 
-// 将此操应用至 v[i], v[i+1] ... 直到 v[n-1]
+// Apply the operation to v[i], v[i+1] ... up to v[n-1].
 func (v Vector) DoSome(i, n int, u Vector, c chan int) {
-	for ; i < n; i++ {
-		v[i] += u.Op(v[i])
-	}
-	c <- 1    // 发信号表示这一块计算完成。
+    for ; i < n; i++ {
+        v[i] += u.Op(v[i])
+    }
+    c <- 1    // signal that this piece is done
 }
 ```
 
-我们在循环中启动了独立的处理块，每个CPU将执行一个处理。 它们有可能以乱序的形式完成并结束，但这没有关系； 我们只需在所有Go程开始后接收，并统计信道中的完成信号即可。
+我们在循环中启动了独立的处理块，每个CPU将执行一个处理。 它们有可能以乱序的形式完成并结束，但这没有关系； 我们只需在所有goroutine开始后接收，并统计信道中的完成信号即可。
 
 ```go
-const NCPU = 4  // CPU核心数
+const numCPU = 4 // number of CPU cores
 
 func (v Vector) DoAll(u Vector) {
-	c := make(chan int, NCPU)  // 缓冲区是可选的，但明显用上更好
-	for i := 0; i < NCPU; i++ {
-		go v.DoSome(i*len(v)/NCPU, (i+1)*len(v)/NCPU, u, c)
-	}
-	// 排空信道。
-	for i := 0; i < NCPU; i++ {
-		<-c    // 等待任务完成
-	}
-	// 一切完成。
+    c := make(chan int, numCPU)  // Buffering optional but sensible.
+    for i := 0; i < numCPU; i++ {
+        go v.DoSome(i*len(v)/numCPU, (i+1)*len(v)/numCPU, u, c)
+    }
+    // Drain the channel.
+    for i := 0; i < numCPU; i++ {
+        <-c    // wait for one task to complete
+    }
+    // All done.
 }
 ```
 
-目前Go运行时的实现默认并不会并行执行代码，它只为用户层代码提供单一的处理核心。 任意数量的Go程都可能在系统调用中被阻塞，而在任意时刻默认只有一个会执行用户层代码。 它应当变得更智能，而且它将来肯定会变得更智能。但现在，若你希望CPU并行执行， 就必须告诉运行时你希望同时有多少Go程能执行代码。有两种途径可意识形态，要么 在运行你的工作时将 `GOMAXPROCS` 环境变量设为你要使用的核心数， 要么导入 `runtime` 包并调用 `runtime.GOMAXPROCS(NCPU)`。 `runtime.NumCPU()` 的值可能很有用，它会返回当前机器的逻辑CPU核心数。 当然，随着调度算法和运行时的改进，将来会不再需要这种方法。
+目前Go运行时的实现默认并不会并行执行代码，它只为用户层代码提供单一的处理核心。 任意数量的goroutine都可能在系统调用中被阻塞，而在任意时刻默认只有一个会执行用户层代码。 它应当变得更智能，而且它将来肯定会变得更智能。但现在，若你希望CPU并行执行， 就必须告诉运行时你希望同时有多少goroutine能执行代码。有两种途径可意识形态，要么 在运行你的工作时将 `GOMAXPROCS` 环境变量设为你要使用的核心数， 要么导入 `runtime` 包并调用 `runtime.GOMAXPROCS(NCPU)`。 `runtime.NumCPU()` 的值可能很有用，它会返回当前机器的逻辑CPU核心数。 当然，随着调度算法和运行时的改进，将来会不再需要这种方法。
 
 注意不要混淆并发和并行的概念：并发是用可独立执行的组件构造程序的方法， 而并行则是为了效率在多CPU上平行地进行计算。尽管Go的并发特性能够让某些问题更易构造成并行计算， 但Go仍然是种并发而非并行的语言，且Go的模型并不适合所有的并行问题。 关于其中区别的讨论，见 [此博文](http://blog.golang.org/2013/01/concurrency-is-not-parallelism.html)。
 
 ### 可能泄露的缓冲区
 
-并发编程的工具甚至能很容易地表达非并发的思想。这里有个提取自RPC包的例子。 客户端Go程从某些来源，可能是网络中循环接收数据。为避免分配和释放缓冲区， 它保存了一个空闲链表，使用一个带缓冲信道表示。若信道为空，就会分配新的缓冲区。 一旦消息缓冲区就绪，它将通过 `serverChan` 被发送到服务器。 `serverChan`.
+并发编程的工具甚至能很容易地表达非并发的思想。这里有个提取自RPC包的例子。 客户端goroutine从某些来源，可能是网络中循环接收数据。为避免分配和释放缓冲区， 它保存了一个空闲链表，使用一个带缓冲信道表示。若信道为空，就会分配新的缓冲区。 一旦消息缓冲区就绪，它将通过 `serverChan` 被发送到服务器。 
 
 ```go
 var freeList = make(chan *Buffer, 100)
 var serverChan = make(chan *Buffer)
 
 func client() {
-	for {
-		var b *Buffer
-		// 若缓冲区可用就用它，不可用就分配个新的。
-		select {
-		case b = <-freeList:
-			// 获取一个，不做别的。
-		default:
-			// 非空闲，因此分配一个新的。
-			b = new(Buffer)
-		}
-		load(b)              // 从网络中读取下一条消息。
-		serverChan <- b   // 发送至服务器。
-	}
+    for {
+        var b *Buffer
+        // Grab a buffer if available; allocate if not.
+        select {
+        case b = <-freeList:
+            // Got one; nothing more to do.
+        default:
+            // None free, so allocate a new one.
+            b = new(Buffer)
+        }
+        load(b)              // Read next message from the net.
+        serverChan <- b      // Send to server.
+    }
 }
 ```
 
@@ -2033,17 +2059,17 @@ func client() {
 
 ```go
 func server() {
-	for {
-		b := <-serverChan    // 等待工作。
-		process(b)
-		// 若缓冲区有空间就重用它。
-		select {
-		case freeList <- b:
-			// 将缓冲区放大空闲列表中，不做别的。
-		default:
-			// 空闲列表已满，保持就好。
-		}
-	}
+    for {
+        b := <-serverChan    // Wait for work.
+        process(b)
+        // Reuse buffer if there's room.
+        select {
+        case freeList <- b:
+            // Buffer on free list; nothing more to do.
+        default:
+            // Free list full, just carry on.
+        }
+    }
 }
 ```
 
@@ -2062,15 +2088,16 @@ type error interface {
 库的编写者通过更丰富的底层模型可以轻松实现这个接口，这样不仅能看见错误， 还能提供一些上下文。例如，`os.Open` 可返回一个 `os.PathError`。
 
 ```go
-`// PathError 记录一个错误以及产生该错误的路径和操作。
+// PathError records an error and the operation and
+// file path that caused it.
 type PathError struct {
-	Op string    // "open"、"unlink" 等等。
-	Path string  // 相关联的文件。
-	Err error    // 由系统调用返回。
+    Op string    // "open", "unlink", etc.
+    Path string  // The associated file.
+    Err error    // Returned by the system call.
 }
 
 func (e *PathError) Error() string {
-	return e.Op + " " + e.Path + ": " + e.Err.Error()
+    return e.Op + " " + e.Path + ": " + e.Err.Error()
 }
 ```
 
@@ -2088,19 +2115,19 @@ open /etc/passwx: no such file or directory
 
 ```go
 for try := 0; try < 2; try++ {
-	file, err = os.Create(filename)
-	if err == nil {
-		return
-	}
-	if e, ok := err.(*os.PathError); ok && e.Err == syscall.ENOSPC {
-		deleteTempFiles()  // 恢复一些空间。
-		continue
-	}
-	return
+    file, err = os.Create(filename)
+    if err == nil {
+        return
+    }
+    if e, ok := err.(*os.PathError); ok && e.Err == syscall.ENOSPC {
+        deleteTempFiles()  // Recover some space.
+        continue
+    }
+    return
 }
 ```
 
-这里的第二条 `if` 是另一种[类型断言](https://golang.org/doc/effective_go.html#%E6%8E%A5%E5%8F%A3%E8%BD%AC%E6%8D%A2)。若它失败， `ok` 将为 `false`，而 `e` 则为`nil`. 若它成功，`ok` 将为 `true`，这意味着该错误属于 `*os.PathError`类型，而 `e` 能够检测关于该错误的更多信息。
+这里的第二条 `if` 是另一种[类型断言](https://golang.org/doc/effective_go.html#type_assertion)。若它失败， `ok` 将为 `false`，而 `e` 则为`nil`. 若它成功，`ok` 将为 `true`，这意味着该错误属于 `*os.PathError`类型，而 `e` 能够检测关于该错误的更多信息。
 
 ### Panic
 
@@ -2109,18 +2136,18 @@ for try := 0; try < 2; try++ {
 为此，我们提供了内建的 `panic` 函数，它会产生一个运行时错误并终止程序 （但请继续看下一节）。该函数接受一个任意类型的实参（一般为字符串），并在程序终止时打印。 它还能表明发生了意料之外的事情，比如从无限循环中退出了。
 
 ```go
-`// 用牛顿法计算立方根的一个玩具实现。
+// A toy implementation of cube root using Newton's method.
 func CubeRoot(x float64) float64 {
-	z := x/3   // 任意初始值
-	for i := 0; i < 1e6; i++ {
-		prevz := z
-		z -= (z*z*z-x) / (3*z*z)
-		if veryClose(z, prevz) {
-			return z
-		}
-	}
-	// 一百万次迭代并未收敛，事情出错了。
-	panic(fmt.Sprintf("CubeRoot(%g) did not converge", x))
+    z := x/3   // Arbitrary initial value
+    for i := 0; i < 1e6; i++ {
+        prevz := z
+        z -= (z*z*z-x) / (3*z*z)
+        if veryClose(z, prevz) {
+            return z
+        }
+    }
+    // A million iterations has not converged; something is wrong.
+    panic(fmt.Sprintf("CubeRoot(%g) did not converge", x))
 }
 ```
 
@@ -2138,11 +2165,11 @@ func init() {
 
 ### 恢复
 
-当 `panic` 被调用后（包括不明确的运行时错误，例如切片检索越界或类型断言失败）， 程序将立刻终止当前函数的执行，并开始回溯Go程的栈，运行任何被推迟的函数。 若回溯到达Go程栈的顶端，程序就会终止。不过我们可以用内建的 `recover` 函数来重新或来取回Go程的控制权限并使其恢复正常执行。
+当 `panic` 被调用后（包括不明确的运行时错误，例如切片检索越界或类型断言失败）， 程序将立刻终止当前函数的执行，并开始回溯goroutine的栈，运行任何被推迟的函数。 若回溯到达goroutine栈的顶端，程序就会终止。不过我们可以用内建的 `recover` 函数来重新或来取回goroutine的控制权限并使其恢复正常执行。
 
 调用 `recover` 将停止回溯过程，并返回传入 `panic` 的实参。 由于在回溯时只有被推迟函数中的代码在运行，因此 `recover` 只能在被推迟的函数中才有效。
 
-`recover` 的一个应用就是在服务器中终止失败的Go程而无需杀死其它正在执行的Go程。
+`recover` 的一个应用就是在服务器中终止失败的goroutine而无需杀死其它正在执行的goroutine。
 
 ```go
 func server(workChan <-chan *Work) {
@@ -2161,35 +2188,36 @@ func safelyDo(work *Work) {
 }
 ```
 
-在此例中，若 `do(work)` 触发了Panic，其结果就会被记录， 而该Go程会被干净利落地结束，不会干扰到其它Go程。我们无需在推迟的闭包中做任何事情， `recover` 会处理好这一切。
+在此例中，若 `do(work)` 触发了Panic，其结果就会被记录， 而该goroutine会被干净利落地结束，不会干扰到其它goroutine。我们无需在推迟的闭包中做任何事情， `recover` 会处理好这一切。
 
 由于直接从被推迟函数中调用 `recover` 时不会返回 `nil`， 因此被推迟的代码能够调用本身使用了 `panic` 和 `recover` 的库函数而不会失败。例如在 `safelyDo` 中，被推迟的函数可能在调用 `recover` 前先调用记录函数，而该记录函数应当不受Panic状态的代码的影响。
 
 通过恰当地使用恢复模式，`do` 函数（及其调用的任何代码）可通过调用 `panic` 来避免更坏的结果。我们可以利用这种思想来简化复杂软件中的错误处理。 让我们看看 `regexp` 包的理想化版本，它会以局部的错误类型调用 `panic` 来报告解析错误。以下是一个 `error` 类型的 `Error` 方法和一个`Compile` 函数的定义：
 
 ```go
-`// Error 是解析错误的类型，它满足 error 接口。
+// Error is the type of a parse error; it satisfies the error interface.
 type Error string
 func (e Error) Error() string {
-	return string(e)
+    return string(e)
 }
 
-// error 是 *Regexp 的方法，它通过用一个 Error 触发Panic来报告解析错误。
+// error is a method of *Regexp that reports parsing errors by
+// panicking with an Error.
 func (regexp *Regexp) error(err string) {
-	panic(Error(err))
+    panic(Error(err))
 }
 
-// Compile 返回该正则表达式解析后的表示。
+// Compile returns a parsed representation of the regular expression.
 func Compile(str string) (regexp *Regexp, err error) {
-	regexp = new(Regexp)
-	// doParse will panic if there is a parse error.
-	defer func() {
-		if e := recover(); e != nil {
-			regexp = nil    // 清理返回值。
-			err = e.(Error) // 若它不是解析错误，将重新触发Panic。
-		}
-	}()
-	return regexp.doParse(str), nil
+    regexp = new(Regexp)
+    // doParse will panic if there is a parse error.
+    defer func() {
+        if e := recover(); e != nil {
+            regexp = nil    // Clear return value.
+            err = e.(Error) // Will re-panic if not a parse error.
+        }
+    }()
+    return regexp.doParse(str), nil
 }
 ```
 
@@ -2259,7 +2287,7 @@ value="Show QR" name=qr>
 </form>
 </body>
 </html>
-````
+```
 
 `main` 之前的代码应该比较容易理解。我们通过一个标志为服务器设置了默认端口。 模板变量 `templ` 正式有趣的地方。它构建的HTML模版将会被服务器执行并显示在页面中。 稍后我们将详细讨论。
 
@@ -2275,6 +2303,3 @@ value="Show QR" name=qr>
 
 你终于如愿以偿了：以几行代码实现的，包含一些数据驱动的HTML文本的Web服务器。 Go语言强大到能让很多事情以短小精悍的方式解决。
 
-构建版本 devel +f22911f Thu Apr 16 05:55:22 2015 +0000.
-除[特别注明](http://code.google.com/policies.html#restrictions)外， 本页内容均采用知识共享-署名（CC-BY）3.0协议授权，代码采用[BSD协议](https://golang.org/LICENSE)授权。
-[服务条款](https://golang.org/doc/tos.html) | [隐私政策](http://www.google.com/intl/en/policies/privacy/)
