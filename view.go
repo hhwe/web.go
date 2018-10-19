@@ -24,7 +24,7 @@ var templates = template.Must(template.ParseFiles(
 var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 
 func renderTemplate(w http.ResponseWriter, tmpl string) {
-	csrf := addToken("csrf")
+	csrf := GenerateToken("csrf")
 	err := templates.ExecuteTemplate(w, tmpl+".html", csrf)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -59,15 +59,6 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 func Cart(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, r.URL.Path[1:])
-}
-
-func Comment(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		handleRead(w, r)
-	case "POST":
-		handleInsert(w, r)
-	}
 }
 
 func ErrorTest(w http.ResponseWriter, r *http.Request) {

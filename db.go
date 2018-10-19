@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	host   = "127.0.0.1:27017"
-	source = "admin"
-	user   = "user"
-	pass   = "123456"
+	host     = "127.0.0.1:27017"
+	source   = "admin"
+	user     = "user"
+	pass     = "123456"
 	database = "web"
 )
 
@@ -22,13 +22,13 @@ var (
 // initial global session
 func init() {
 	dialInfo := &mgo.DialInfo{
-		Addrs:    []string{host},
+		Addrs: []string{host},
 		//Source:   source,
 		//Username: user,
 		//Password: pass,
 		//Database:database,
-		Timeout:time.Second * 1,
-		PoolLimit:2,
+		Timeout:   time.Second * 1,
+		PoolLimit: 2,
 	}
 	session, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {

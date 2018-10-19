@@ -7,12 +7,12 @@ import (
 
 // todo: response error code table
 const (
-	StatusFail = -1
+	StatusFail    = -1
 	StatusSuccess = 0
 )
 
 var responseCode = map[int]string{
-	StatusFail:           "Fail",
+	StatusFail:    "Fail",
 	StatusSuccess: "Success",
 }
 
@@ -21,19 +21,19 @@ func ResponseCodeText(code int) string {
 }
 
 type Response struct {
-	Code int `json:"code"`
-	Msg string `json:"msg"`
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 }
 
-// ResponseWithJson replies to the request with the specified message and HTTP code.
+// responseWithJson replies to the request with the specified message and HTTP code.
 // It does not otherwise end the request; the caller should ensure no further
 // writes are done to w.
-func ResponseWithJson(w http.ResponseWriter, msg string, code int, data interface{}) {
+func responseWithJson(w http.ResponseWriter, code int, msg string, errorCode int, data interface{}) {
 	response := Response{
-		Code:code,
-		Msg:msg,
-		Data:data,
+		Code: errorCode,
+		Msg:  msg,
+		Data: data,
 	}
 	payload, err := json.Marshal(response)
 	if err != nil {
@@ -42,4 +42,15 @@ func ResponseWithJson(w http.ResponseWriter, msg string, code int, data interfac
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
 	w.Write(payload)
+}
+
+// Jsonify success to response with marshaled json data and 200 http code.
+func Jsonify(w http.ResponseWriter, data interface{}) {
+	responseWithJson(w, http.StatusOK, "", 0, data)
+}
+
+// Abort prevents pending handlers from being called. 
+func Abort(w http.ResponseWriter, msg string, code int)  {
+	logger.Println(msg)
+	responseWithJson(w, code, msg, -1, nil)
 }

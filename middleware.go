@@ -95,13 +95,13 @@ func Auth() Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			token := r.Header.Get("authorization")
 			if token == "" {
-				ResponseWithJson(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized, nil )
+				Abort(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			} else {
-				// todo: parse token
-			}
-			if !validCookie(r, "name") {
-				ResponseWithJson(w, http.StatusText(http.StatusForbidden), http.StatusForbidden, nil)
-				return
+				uid := getValueOfCookie(r, loginCookieName)
+				if !CheckToken(uid) {
+					Abort(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+					return
+				}
 			}
 
 			// Call the next middleware/handler in chain

@@ -14,8 +14,8 @@ var (
 	salt = "123456"
 )
 
-// Hash string to string, add salt to hash
-func HashSha256(p string) (d string) {
+// HashSHA256 hash string to string, add salt to hash
+func HashSHA256(p string) (d string) {
 	h := sha256.New()
 	io.WriteString(h, p)
 	d = string(h.Sum(nil))
@@ -29,7 +29,7 @@ func HashSha256(p string) (d string) {
 func Recovery(w http.ResponseWriter) {
 	if e := recover(); e != nil {
 		buf := new(bytes.Buffer)
-		fmt.Fprintf(buf, "Error: %v", e)
+		fmt.Fprintf(buf, "Error: %v\n", e)
 
 		for i := 1; ; i++ {
 			pc, file, line, ok := runtime.Caller(i)

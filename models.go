@@ -10,52 +10,6 @@ import (
 	"time"
 )
 
-type comment struct {
-	ID     bson.ObjectId `json:"id" bson:"_id"`
-	Author string        `json:"author" bson:"author"`
-	Text   string        `json:"text" bson:"text"`
-	When   time.Time     `json:"when" bson:"when"`
-}
-
-func handleInsert(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Database)
-
-	// decode the request body
-	var c comment
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		return
-	}
-	defer r.Body.Close()
-
-	// give the comment a unique ID and set the time
-	c.ID = bson.NewObjectId()
-	c.When = time.Now()
-	// insert it into the database
-	if err := db.C("comments").Insert(&c); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		return
-	}
-	//// redirect to it
-	//http.Redirect(w, r, "/comments/"+c.ID.Hex(), http.StatusTemporaryRedirect)
-}
-
-func handleRead(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Database)
-	// load the comments
-	var comments []*comment
-	if err := db.C("comments").Find(nil).Sort("-when").
-			Limit(100).All(&comments); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		return
-	}
-	// write it out
-	if err := json.NewEncoder(w).Encode(comments); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		return
-	}
-}
-
 type User struct {
 	ID       bson.ObjectId `bson:"_id" json:"id"`
 	Age      int           `bson:"age" json:"age"`
@@ -69,35 +23,11 @@ type User struct {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Database)
-
-	var u User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		return
-	}
-	defer r.Body.Close()
-
-	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		//logger.Panic("ERROR: Invalid input")
-		return
-	}
-	if m, _ := regexp.MatchString(`^(1[3458][0-9]\d{4,8})$`, u.Phone); !m {
-		logger.Panic("ERROR: invalid phone")
-	}
-
-	u.ID = bson.NewObjectId()
-	u.Created = time.Now()
-	// Prevent plaintext Passwords are stored
-	u.PassWord = HashSha256(u.PassWord)
-	if err := db.C("user").Insert(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-		return
-	}
-
-	ResponseWithJson(w, ResponseCodeText(StatusSuccess), http.StatusCreated, nil)
+	insertUser(w, r)
 }
+
+// todo: add to config file
+var loginCookieName = "_uid"
 
 func login(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Database)
@@ -105,28 +35,22 @@ func login(w http.ResponseWriter, r *http.Request) {
 	var u User
 	// todo: verify the validity of data, csrf token
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, "error request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	u.PassWord = HashSha256(u.PassWord)
-	if err := db.C("user").Find(bson.M{"username": u.UserName,
-			"password": u.PassWord}).One(&u); err != nil {
-		ResponseWithJson(w, "user not fount", http.StatusBadRequest, nil)
+	u.PassWord = HashSHA256(u.PassWord)
+	if err := db.C("user").Find(bson.M{"username": u.UserName}).One(&u); err != nil {
+		Abort(w, "user not fount", http.StatusBadRequest)
 		return
 	}
 
-	token := addToken(u.UserName)
+	token := GenerateToken(string(u.ID))
 	// note: if this function execute after json encode will not work
-	addCookie(w, "name", u.UserName)
+	addCookie(w, loginCookieName, string(u.ID))
 
-	//if err := json.NewEncoder(w).Encode(user); err != nil {
-	//	ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
-	//	return
-	//}
-
-	ResponseWithJson(w, ResponseCodeText(StatusSuccess), http.StatusOK, token)
+	Jsonify(w, token)
 }
 
 func findUser(w http.ResponseWriter, r *http.Request) {
@@ -134,39 +58,67 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 
 	var users []*User
 	if err := db.C("user").Find(nil).Sort("-created").
-			Limit(100).All(&users); err != nil {
+		Limit(100).All(&users); err != nil {
 		logger.Panicln(err)
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, "error request body", http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, "", http.StatusOK, users)
+	Jsonify(w, users)
 }
 
 func insertUser(w http.ResponseWriter, r *http.Request) {
 	db := context.Get(r, "database").(*mgo.Database)
 
 	var u User
+	// todo: prevent XSS can use http.Eascape().
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	if u.Phone == "" || u.UserName == "" || u.PassWord == "" {
-		log.Panic("ERROR: need phone and password")
+	if m, _ := regexp.MatchString(`^[\p{Han}\w]{2,8}$`, u.UserName); !m {
+		Abort(w, "invalid name, only chainese or alpnum are permitted", http.StatusBadRequest)
+		return
+	}
+
+	if m, _ := regexp.MatchString(`^(1[3458][0-9]\d{4,8})$`, u.Phone); !m {
+		Abort(w, "invalid phone", http.StatusBadRequest)
+		return
+	}
+
+	if m, _ := regexp.MatchString(`^([\w\.\_]{2,10})@(\w{1,}).([a-z]{2,4})$`, u.Email); !m {
+		Abort(w, "invalid email", http.StatusBadRequest)
+		return
+	}
+
+	if m, _ := regexp.MatchString(`^[\w._]{6,20}$`, u.PassWord); !m {
+		Abort(w, "invalid password", http.StatusBadRequest)
+		return
 	}
 
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
-	// Prevent plaintext Passwords are stored
-	u.PassWord = HashSha256(u.PassWord)
-	if err := db.C("user").Insert(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+	// prevent plaintext passwords are stored
+	u.PassWord = HashSHA256(u.PassWord)
+	// ensure user field is unique
+	au := User{}
+	db.C("user").Find(bson.M{"$or": []bson.M{
+		bson.M{"username": u.UserName},
+		bson.M{"email": u.Email},
+		bson.M{"phone": u.Phone},
+	}}).One(&au) // ignore error when query data
+	if au.ID != "" {
+		Abort(w, "repeated phone, email or username", http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, "", http.StatusCreated, u)
+	if err := db.C("user").Insert(&u); err != nil {
+		panic(err)
+	}
+
+	Jsonify(w, nil)
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +126,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, "error request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
@@ -183,13 +135,13 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		log.Panic("ERROR: need phone and password")
 	}
 	// Prevent plaintext Passwords are stored
-	u.PassWord = HashSha256(u.PassWord)
+	u.PassWord = HashSHA256(u.PassWord)
 	if err := db.C("user").Find(bson.M{"id": u.ID}).One(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, "error request body", http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, "", http.StatusOK, u)
+	Jsonify(w, u)
 }
 
 func removeUser(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +149,7 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, "error request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
@@ -209,9 +161,9 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 	u.ID = bson.NewObjectId()
 	u.Created = time.Now()
 	if err := db.C("user").RemoveId(u.ID); err != nil {
-		ResponseWithJson(w, "error request body", http.StatusBadRequest, nil)
+		Abort(w, "error request body", http.StatusBadRequest)
 		return
 	}
 
-	ResponseWithJson(w, "", http.StatusOK, u)
+	Jsonify(w, u)
 }

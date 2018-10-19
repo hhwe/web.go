@@ -10,13 +10,6 @@ import (
 )
 
 func main() {
-
-	// testing
-	http.HandleFunc("/test/error",
-		Chain(ErrorTest, Method("GET", "POST"), DBSession(), Logging()))
-	http.HandleFunc("/test/comments",
-		Chain(Comment, Method("GET", "POST"), DBSession(), Logging()))
-
 	// home page
 	http.HandleFunc("/",
 		Chain(Index, Method("GET"), DBSession(), Logging()))

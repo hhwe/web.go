@@ -1,15 +1,10 @@
 package main
 
 import (
-	"crypto/md5"
-	"fmt"
-	"io"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
-
 
 // Context --------------------------------------------------------------------
 
@@ -64,7 +59,6 @@ func (c *Context) clear(r *http.Request) {
 	delete(c.Data, r)
 }
 
-
 // Session --------------------------------------------------------------------
 
 // todo: store session on redis, add expire time to every sessions
@@ -73,8 +67,8 @@ const (
 	sessionCookie
 	sessionCRSF
 )
-var sessions = map[int]map[string]string{}
 
+var sessions = map[int]map[string]string{}
 
 // Cookie ---------------------------------------------------------------------
 
@@ -83,17 +77,25 @@ var sessions = map[int]map[string]string{}
 func addCookie(w http.ResponseWriter, name string, value string) {
 	expire := time.Now().AddDate(0, 0, 3)
 	cookie := http.Cookie{
-		Name:    name,
-		Value:   value,
-		Expires: expire,
-		Path:    "/",
-		HttpOnly:true,  // can't called by javascript
+		Name:     name,
+		Value:    value,
+		Expires:  expire,
+		Path:     "/",
+		HttpOnly: true, // can't called by javascript
 	}
 	http.SetCookie(w, &cookie)
-	sessions[sessionCookie] = map[string]string{name:value}
+	sessions[sessionCookie] = map[string]string{name: value}
 }
 
-// validate cookie from request of current request
+func getValueOfCookie(r *http.Request, name string) string {
+	cookie, err := r.Cookie(name)
+	if err != nil {
+		panic(err)
+	}
+	return cookie.Value
+}
+
+// validCookie validate cookie from request of current request
 func validCookie(r *http.Request, name string) bool {
 	cookie, err := r.Cookie(name)
 	if err != nil {
@@ -108,16 +110,21 @@ func validCookie(r *http.Request, name string) bool {
 	return false
 }
 
-
 // Token ----------------------------------------------------------------------
 
-// Generates a random number for prevention CSRF
-func addToken(name string) (token string) {
-	h := md5.New()
+// GenerateToken generates a random number for prevention CSRF
+func GenerateToken(name string) (token string) {
 	currentTime := time.Now().Unix()
-	io.WriteString(h, strconv.FormatInt(currentTime, 10))
-	io.WriteString(h, HashSha256("token"))
-	token = fmt.Sprintf("%x", h.Sum(nil))
-	sessions[sessionToken] =map[string]string{name:token}
+	token = HashSHA256(string(currentTime))
+	sessions[sessionToken] = map[string]string{name: token}
 	return
+}
+
+// CheckToken confirm token validations
+func CheckToken(name string) bool {
+	// check cookie's value is valid and in sessions
+	if _, ok := sessions[sessionToken][name]; !ok {
+		return true
+	}
+	return false
 }
