@@ -46,12 +46,10 @@ func DBSession() Middleware {
 
 			// save it in the mux context, add to request lifetime
 			context.Set(r, "database", db)
+			defer context.Clear(r)  // clears request values at the end of a request lifetime.
 
 			// pass execution to the original handler
 			f(w, r)
-
-			// clears request values at the end of a request lifetime.
-			context.Clear(r)
 		}
 	}
 }
@@ -96,6 +94,7 @@ func Auth() Middleware {
 			token := r.Header.Get("authorization")
 			if token == "" {
 				Abort(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
 			} else {
 				uid := getValueOfCookie(r, loginCookieName)
 				if !CheckToken(uid) {

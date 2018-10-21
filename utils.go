@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,12 +16,13 @@ var (
 
 // HashSHA256 hash string to string, add salt to hash
 func HashSHA256(p string) (d string) {
-	h := sha256.New()
+	h := md5.New()
 	io.WriteString(h, p)
 	d = string(h.Sum(nil))
 	io.WriteString(h, salt)
 	io.WriteString(h, d)
 	d = string(h.Sum(nil))
+	logger.Println(d)
 	return
 }
 

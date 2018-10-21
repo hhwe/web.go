@@ -124,7 +124,7 @@ func GenerateToken(name string) (token string) {
 func CheckToken(name string) bool {
 	// check cookie's value is valid and in sessions
 	if _, ok := sessions[sessionToken][name]; !ok {
-		return true
+		return false
 	}
-	return false
+	return true
 }

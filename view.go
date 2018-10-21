@@ -11,17 +11,12 @@ package main
 
 import (
 	"html/template"
-	"log"
 	"net/http"
-	"os"
 )
 
 // parse static file when app was compiled
 var templates = template.Must(template.ParseFiles(
 	"static/index.html", "static/register.html", "static/login.html"))
-
-// logging setting
-var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 
 func renderTemplate(w http.ResponseWriter, tmpl string) {
 	csrf := GenerateToken("csrf")
