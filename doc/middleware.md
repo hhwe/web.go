@@ -188,3 +188,8 @@ Hello World
 ```
 
 复制代码与刚才一样我们得到了HelloWorld这个正确结果。
+
+
+## reference
+
+[Simple HTTP middleware with Go](https://hackernoon.com/simple-http-middleware-with-go-79a4ad62889b)

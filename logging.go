@@ -1,18 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"log"
+	"net/http"
 	"os"
+	"time"
 )
 
-// logging setting
-var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
+type Logger struct {
 
-type Logger interface {
-	debug(v ...interface{})
-	info(v ...interface{})
-	warning(v ...interface{})
-	error(v ...interface{})
+}
+
+func (l Logger) ServerHttp(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	start := time.Now()
+	next(w, r)
+
 }
 
 func NewLogger()  {
