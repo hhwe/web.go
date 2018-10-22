@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+
 	// home page
 	http.HandleFunc("/",
 		Chain(Index, Method("GET"), DBSession(), Logging()))
@@ -35,11 +36,11 @@ func main() {
 		"/static/", http.FileServer(http.Dir("static/"))))
 
 	logger.Println(`:q
-* Environment: production
-  WARNING: Do not use the development server in a production environment.
-* Debug mode: off
-* Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
-`)
+	* Environment: production
+	  WARNING: Do not use the development server in a production environment.
+	* Debug mode: off
+	* Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+	`)
 	logger.Fatal(http.ListenAndServe(":8000", nil))
 
 }
