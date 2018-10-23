@@ -1,39 +1,24 @@
 package main
 
-import "net/http"
-
-type Handler interface {
-	ServerHttp(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
-}
-
-type middleware struct {
-	handler Handler
-	next *middleware
-}
-
-func (m middleware) ServerHttp(w http.ResponseWriter, r *http.Request) {
-	m.handler.ServerHttp(w, r, m.next.ServerHttp)
-}
+import (
+	"net/http"
+)
 
 type App struct {
-	middleware middleware
-	handlers []Handler
+	handler     http.Handler
+	middlewares []func(http.Handler) http.Handler
 }
 
-func (a *App) ServerHTTP(w http.ResponseWriter, r *http.Request) {
-	a.middleware.ServerHttp(w, r)
-}
-
-func NewApp(handlers ...Handler) *App {
+func Classic(h http.Handler) *App {
 	return &App{
-		handlers:handlers,
-		middleware:middleware{},
+		handler:     h,
+		middlewares: []func(http.Handler) http.Handler{middlewareTwo, middlewareOne},
 	}
 }
 
-func main() {
-	mux := http.NewServeMux()
-	n := NewApp(NewLogger())
-	lh :=
-	mux.Handle("/", )
+func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	for _, f := range app.middlewares {
+		app.handler = f(app.handler)
+	}
+	app.handler.ServeHTTP(w, r)
 }
