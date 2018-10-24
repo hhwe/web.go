@@ -31,7 +31,12 @@ func final(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	finalHandler := http.HandlerFunc(final)
+
 	app := Classic(finalHandler)
-	http.Handle("/", app)
-	http.ListenAndServe(":3000", nil)
+	app.Handle("/", finalHandler)
+	http.ListenAndServe(":3000", app)
+}
+
+type Resource interface {
+	Get()
 }
