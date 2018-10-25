@@ -2,54 +2,101 @@ package main
 
 import (
 	"net/http"
+	"net/url"
+	"reflect"
+	"regexp"
+	"strings"
 )
 
+type Route struct {
+	regex    *regexp.Regexp
+	params   map[int]string
+	resource reflect.Type
+}
+
 type Router struct {
-	pattern        string
-	params         map[int]string
-	controllerType reflect.Type
+	routers     []*Route
+	Application *App
 }
 
-func (r *Router) Match(r *http.Request) {
+// Add is mapping dynamic url to resource
+func (rt *Router) Add(pattern string, rc Resource) {
+	parts := strings.Split(pattern, "/")
+	j, params := 0, make(map[int]string)
+	for i, part := range parts {
+		if strings.HasPrefix(part, ":") {
+			// replace params with regexp
+			expr := "([^/]+)"
+			parts[i] = expr
+			params[j] = part[1:]
+			j++
+		}
+	}
 
+	// now create the Route
+	// recreate the url pattern, with parameters replaced
+	// by regular expressions. then compile the regex
+	pattern = strings.Join(parts, "/")
+	regex := regexp.MustCompile(pattern)
+	t := reflect.Indirect(reflect.ValueOf(rc)).Type()
+	route := &Route{
+		regex:    regex,
+		params:   params,
+		resource: t,
+	}
+	rt.routers = append(rt.routers, route)
 }
 
-func (r *Router) findControllerInfo(r *http.Request) (string, string) {
-	path := r.URL.Path
-	if strings.HasSuffix(path, "/") {
-		path = strings.TrimSuffix(path, "/")
+// ServeHTTP implement http.Handler
+func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var started bool
+	requestPath := r.URL.Path
+
+	//find a matching Route
+	for _, route := range rt.routers {
+
+		//check if Route pattern matches url
+		if !route.regex.MatchString(requestPath) {
+			continue
+		}
+
+		//get submatches (params)
+		matches := route.regex.FindStringSubmatch(requestPath)
+
+		//double check that the Route matches the URL pattern.
+		if len(matches[0]) != len(requestPath) {
+			continue
+		}
+
+		params := make(map[string]string)
+		if len(route.params) > 0 {
+			//add url parameters to the query param map
+			values := r.URL.Query()
+			for i, match := range matches[1:] {
+				values.Add(route.params[i], match)
+				params[route.params[i]] = match
+			}
+
+			r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
+		}
+		//Invoke the request handler
+		vc := reflect.New(route.resource)
+		init := vc.MethodByName("Init")
+		in := make([]reflect.Value, 2)
+		ct := &Context{ResponseWriter: w, Request: r, Params: params}
+		in[0] = reflect.ValueOf(ct)
+		in[1] = reflect.ValueOf(route.resource.Name())
+		init.Call(in)
+		in = make([]reflect.Value, 0)
+
+		method := vc.MethodByName(strings.Title(r.Method))
+		method.Call(in)
+
+		break
 	}
-	pathInfo := strings.Split(path, "/")
 
-	controllerName := defController
-	if len(pathInfo) > 1 {
-		controllerName = pathInfo[1]
-	}
-
-	methodName := defMethod
-	if len(pathInfo) > 2 {
-		methodName = strings.Title(strings.ToLower(pathInfo[2]))
-	}
-
-	return controllerName, methodName
-}
-
-func (r *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	controllerName, methodName := r.findControllerInfo(r)
-	controllerT, ok := mapping[controllerName]
-	if !ok {
+	//if no matches to url, throw a not found exception
+	if started == false {
 		http.NotFound(w, r)
-		return
 	}
-
-	refV := reflect.New(controllerT)
-	method := refV.MethodByName(methodName)
-	if !method.IsValid() {
-		http.NotFound(w, r)
-		return
-	}
-
-	controller := refV.Interface().(IApp)
-	controller.Init(ctx)
-	method.Call(nil)
 }

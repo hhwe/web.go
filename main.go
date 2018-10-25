@@ -33,10 +33,6 @@ func main() {
 	finalHandler := http.HandlerFunc(final)
 
 	app := Classic(finalHandler)
-	app.Handle("/", finalHandler)
+	// app.Handle("/", finalHandler)
 	http.ListenAndServe(":3000", app)
-}
-
-type Resource interface {
-	Get()
 }

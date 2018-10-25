@@ -1,8 +1,10 @@
+// web.go is a micro restful framework with golang
+// you can build a RESTful API with it.
+// Also completed a middleware chain for a  request.
 package main
 
 import (
 	"net/http"
-	"reflect"
 )
 
 type middleware func(http.Handler) http.Handler
@@ -15,38 +17,36 @@ type App struct {
 	root        bool
 }
 
-
 func Classic(h http.Handler) *App {
 	return &App{
 		handler:     h,
-		middlewares: []func(http.Handler) http.Handler{middlewareTwo, middlewareOne},
+		middlewares: []middleware{middlewareTwo, middlewareOne},
 	}
 }
 
-func (app *App) Handle(pattern string, handler http.Handler) {
-	if pattern == "" {
-		panic("http: invalid pattern")
-	}
-	if handler == nil {
-		panic("http: nil handler")
-	}
+// func (app *App) Handle(pattern string, handler http.Handler) {
+// 	if pattern == "" {
+// 		panic("http: invalid pattern")
+// 	}
+// 	if handler == nil {
+// 		panic("http: nil handler")
+// 	}
 
-	if app.routes == nil {
-		app.routes = []Router
-	}
+// 	if app.routes == nil {
+// 		app.routes = []Router{}
+// 	}
 
-	if _, exist := app.routes[pattern]; exist {
-		panic("http: multiple registrations for " + pattern)
-	}
+// 	if _, exist := app.routes[pattern]; exist {
+// 		panic("http: multiple registrations for " + pattern)
+// 	}
 
-	route = make(map[string]Router)
-	app.routes = append(app.routes, r)
+// 	route = make(map[string]Router)
+// 	app.routes = append(app.routes, r)
 
-	if pattern[0] != '/' {
-		app.root = true
-	}
-}
-
+// 	if pattern[0] != '/' {
+// 		app.root = true
+// 	}
+// }
 
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, f := range app.middlewares {
