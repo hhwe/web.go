@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -8,6 +9,7 @@ import (
 	"strings"
 )
 
+// Route stores infomation about a matched route.
 type Route struct {
 	regex    *regexp.Regexp
 	params   map[int]string
@@ -99,4 +101,15 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if started == false {
 		http.NotFound(w, r)
 	}
+}
+
+func middlewareRouter(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Executing middleware router")
+		if r.URL.Path != "/" {
+			return
+		}
+		next.ServeHTTP(w, r)
+		log.Println("Executed middleware router")
+	})
 }

@@ -13,10 +13,16 @@ type middleware func(http.Handler) http.Handler
 type App struct {
 	handler     http.Handler
 	middlewares []middleware
-	routes      map[string]Router
+	routes      map[string]*Router
 	root        bool
 }
 
+// NewApp return a new app instance.
+func NewApp() *App {
+	return &App{}
+}
+
+// Classic return a basic app instance with some common middleware
 func Classic(h http.Handler) *App {
 	return &App{
 		handler:     h,
