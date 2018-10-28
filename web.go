@@ -9,54 +9,44 @@ import (
 
 type middleware func(http.Handler) http.Handler
 
-// App is a HTTP multiplexer is a HTTP multiplexer / router similar to net/http.ServeMux.
+// App is a HTTP multiplexer / router similar to net/http.ServeMux.
 type App struct {
-	handler     http.Handler
 	middlewares []middleware
-	routes      map[string]*Router
-	root        bool
+	routes      []*Route
 }
 
-// NewApp return a new app instance.
-func NewApp() *App {
-	return &App{}
+// NewApp registers an empty route.
+func (a *App) NewApp() *Route {
+	route := &Route{}
+	a.routes = append(a.routes, route)
+	return route
 }
 
-// Classic return a basic app instance with some common middleware
-func Classic(h http.Handler) *App {
-	return &App{
-		handler:     h,
-		middlewares: []middleware{middlewareTwo, middlewareOne},
+// Handle registers a new route with a matcher for the URL path.
+func (a *App) Handle(path string, handler http.Handler) {
+	return a.NewApp().handler
+}
+
+func (app *App) Match(r *http.Request) bool {
+	for _, route := range app.routes {
+		if route.Match(r, m) {
+
+		}
 	}
+	return true
 }
-
-// func (app *App) Handle(pattern string, handler http.Handler) {
-// 	if pattern == "" {
-// 		panic("http: invalid pattern")
-// 	}
-// 	if handler == nil {
-// 		panic("http: nil handler")
-// 	}
-
-// 	if app.routes == nil {
-// 		app.routes = []Router{}
-// 	}
-
-// 	if _, exist := app.routes[pattern]; exist {
-// 		panic("http: multiple registrations for " + pattern)
-// 	}
-
-// 	route = make(map[string]Router)
-// 	app.routes = append(app.routes, r)
-
-// 	if pattern[0] != '/' {
-// 		app.root = true
-// 	}
-// }
 
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, f := range app.middlewares {
-		app.handler = f(app.handler)
+	//app.handler = app.routes
+	var handler http.Handler
+	var route Route
+	if app.Match(r) {
+		handler = route.resource
 	}
-	app.handler.ServeHTTP(w, r)
+
+	for _, f := range app.middlewares {
+		handler = f(handler)
+	}
+
+	handlea.ServeHTTP(w, r)
 }
