@@ -5,48 +5,76 @@ package main
 
 import (
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 type middleware func(http.Handler) http.Handler
 
-// App is a HTTP multiplexer / router similar to net/http.ServeMux.
+// App is a HTTP multiplexer / router similar to net/http.Serveapp.
 type App struct {
 	middlewares []middleware
-	routes      []*Route
+	routes      map[string]Route
 }
 
-// NewApp registers an empty route.
-func (a *App) NewApp() *Route {
-	route := &Route{}
-	a.routes = append(a.routes, route)
-	return route
+// Route stores information to match a request and build URLs.
+type Route struct {
+	regexp  *regexp.Regexp
+	handler http.Handler
+	params  []string
 }
 
-// Handle registers a new route with a matcher for the URL path.
-func (a *App) Handle(path string, handler http.Handler) {
-	return a.NewApp().handler
-}
+// AddRoute registers the handler for the given pattern.
+func (app *App) AddRoute(pattern string, handler http.Handler) {
+	if _, exist := app.routes[pattern]; exist {
+		panic("http: multiple registrations for " + pattern)
+	}
 
-func (app *App) Match(r *http.Request) bool {
-	for _, route := range app.routes {
-		if route.Match(r, m) {
-
+	parts := strings.Split(pattern, "/")
+	re := "{([^/]+)}"
+	params := make([]string, 0)
+	for i, part := range parts {
+		if strings.HasPrefix(part, "{") {
+			parts[i] = re
+			params = append(params, part[1:len(part)])
 		}
 	}
-	return true
+
+	if app.routes == nil {
+		app.routes = make(map[string]Route)
+	}
+	app.routes[pattern] = Route{
+		regexp:  regexp.MustCompile(strings.Join(parts, "/")),
+		handler: handler,
+		params:  params,
+	}
 }
 
+// ServeHTTP dispatches the request to the handler whose
+// pattern most closely matches the request URL.
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//app.handler = app.routes
-	var handler http.Handler
-	var route Route
-	if app.Match(r) {
-		handler = route.resource
+	if r.RequestURI == "*" {
+		if r.ProtoAtLeast(1, 1) {
+			w.Header().Set("Connection", "close")
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	for _, f := range app.middlewares {
-		handler = f(handler)
+	// find a matching route
+	path := r.URL.Path
+	for i, route := range app.routes {
+		matches := route.regexp.FindStringSubmatch(path)
+		if len(matches[0]) != len(path) {
+			continue
+		}
+		if len(route.params) != len(matches)-1 {
+			continue
+		}
+		values := r.URL.Query()
+		for i, match := range metched
 	}
 
-	handlea.ServeHTTP(w, r)
+	h, _ := app.Handler(r)
+	h.ServeHTTP(w, r)
 }
