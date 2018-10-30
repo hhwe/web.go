@@ -33,5 +33,5 @@ func main() {
 	app := NewApp(Logging, Pathing)
 	finalHandler := http.HandlerFunc(final)
 	app.AddRoute("/users", finalHandler)
-	http.ListenAndServe(":3000", app)
+	log.Fatal(http.ListenAndServe(":8080", app))
 }
