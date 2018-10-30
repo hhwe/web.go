@@ -17,6 +17,13 @@ type App struct {
 	routes      map[string]Route
 }
 
+func NewApp(middlewares ...middleware) *App {
+	return &App{
+		middlewares: middlewares,
+		routes:      make(map[string]Route),
+	}
+}
+
 // Route stores information to match a request and build URLs.
 type Route struct {
 	regexp  *regexp.Regexp
@@ -63,7 +70,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// find a matching route
 	path := r.URL.Path
-	for i, route := range app.routes {
+	for _, route := range app.routes {
 		matches := route.regexp.FindStringSubmatch(path)
 		if len(matches[0]) != len(path) {
 			continue
@@ -71,10 +78,13 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if len(route.params) != len(matches)-1 {
 			continue
 		}
-		values := r.URL.Query()
-		for i, match := range metched
-	}
+		// values := r.URL.Query()
+		// for i, match := range matches[1:] {
+		// 	values.Add(route.params[i], match)
+		// }
+		// r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
 
-	h, _ := app.Handler(r)
-	h.ServeHTTP(w, r)
+		route.handler.ServeHTTP(w, r)
+		break
+	}
 }
