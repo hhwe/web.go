@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func Test_App(t *testing.T) {
+func TestApp(t *testing.T) {
 	// Mock a app as http Handler
-	app := NewApp(Logging, Pathing)
+	app := NewApp(Logging)
 	app.AddRoute("/users", http.HandlerFunc(FindUsers))
 	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
 

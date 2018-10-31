@@ -20,9 +20,9 @@ func refute(t *testing.T, a interface{}, b interface{}) {
 	}
 }
 
-func Test_Logger(t *testing.T) {
+func TestLogger(t *testing.T) {
 	// Mock a app as http Handler
-	app := NewApp(Logging, Pathing)
+	app := NewApp(Logging)
 	recorder := httptest.NewRecorder()
 
 	req, err := http.NewRequest("GET", "http://localhost:8080/foobar", nil)
@@ -35,9 +35,9 @@ func Test_Logger(t *testing.T) {
 	expect(t, recorder.Code, http.StatusNotFound)
 }
 
-func Test_LoggerURLEncodedString(t *testing.T) {
+func TestLogger_URLEncodedString(t *testing.T) {
 	// Mock a app as http Handler
-	app := NewApp(Logging, Pathing)
+	app := NewApp(Logging)
 	app.AddRoute("/users", http.HandlerFunc(FindUsers))
 	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
 
@@ -54,9 +54,9 @@ func Test_LoggerURLEncodedString(t *testing.T) {
 	expect(t, recorder.Code, http.StatusOK)
 }
 
-func Test_LoggerCustomFormat(t *testing.T) {
+func TestLogger_CustomFormat(t *testing.T) {
 	// Mock a app as http Handler
-	app := NewApp(Logging, Pathing)
+	app := NewApp(Logging)
 	app.AddRoute("/users", http.HandlerFunc(FindUsers))
 	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
 

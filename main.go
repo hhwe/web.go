@@ -6,17 +6,6 @@ import (
 	"time"
 )
 
-func Pathing(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Executing middlewareTwo")
-		// if r.URL.Path != "/" {
-		// 	return
-		// }
-		next.ServeHTTP(w, r)
-		log.Println("Executing middlewareTwo again")
-	})
-}
-
 func FindUsers(w http.ResponseWriter, r *http.Request) {
 	log.Println("Executing finalHandler")
 	time.Sleep(time.Second * 1)
@@ -30,9 +19,17 @@ func FindUsersByID(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(vs.Get("id")))
 }
 
+func FindUsersError(w http.ResponseWriter, r *http.Request) {
+	log.Println("Executing finalHandler")
+	Logger.Panicln("你好")
+	w.Write([]byte("OK"))
+}
+
 func main() {
-	app := NewApp(Pathing, Logging)
+	app := NewApp(Recovery, Logging)
 	app.AddRoute("/users", http.HandlerFunc(FindUsers))
 	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
+	app.AddRoute("/error", http.HandlerFunc(FindUsersError))
+
 	log.Fatal(http.ListenAndServe(":8080", app))
 }
