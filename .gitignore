@@ -12,3 +12,6 @@
 *.out
 .idea
 .vscode
+
+# Compiled file, build with `go build`
+webgo

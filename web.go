@@ -69,8 +69,11 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// find a matching route
+	// determines if the given path needs drop "/" to it.
 	path := r.URL.Path
+	if strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
 	for _, route := range app.routes {
 		matches := route.regexp.FindStringSubmatch(path)
 		if matches == nil || len(matches[0]) != len(path) {
@@ -87,15 +90,20 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
 
-		// appliment http serve
-		app.hanlder(route.handler).ServeHTTP(w, r)
-		break
+		// impliment http serve with app's middlewares
+		app.Handler(route.handler).ServeHTTP(w, r)
+		return
 	}
+	http.HandlerFunc(NotFound).ServeHTTP(w, r)
 }
 
-func (app *App) hanlder(h http.Handler) http.Handler {
+func (app *App) Handler(h http.Handler) http.Handler {
 	for _, m := range app.middlewares {
 		h = m(h)
 	}
 	return h
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "404 page not found", http.StatusNotFound)
 }
