@@ -1,32 +1,60 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
-type keyType int
+func TestApp(t *testing.T) {
+	// mock a http app server
+	app := NewApp(Logging, Pathing)
+	app.AddRoute("/users", http.HandlerFunc(final))
+	app.AddRoute("/users/:id", http.HandlerFunc(FindID))
 
-const (
-	key1 keyType = iota
-	key2
-)
-
-func TestContext(t *testing.T) {
-	assertEqual := func(val interface{}, exp interface{}) {
-		if val != exp {
-			t.Errorf("Expected %v, got %v.", exp, val)
-		}
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/users", nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	r, _ := http.NewRequest("GET", "http://localhost:8080/", nil)
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
 
-	assertEqual(r.Response.StatusCode, 200)
-}
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	app.ServeHTTP(rr, req)
 
-func BenchmarkHello(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		fmt.Sprintf("hello")
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
 	}
+
+	// Check the response body is what we expect.
+	expected := "OK"
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	req1, err := http.NewRequest("GET", "/users/123", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr1 := httptest.NewRecorder()
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	app.ServeHTTP(rr1, req1)
+
+	// Check the response body is what we expect.
+	expected = "123"
+	if rr1.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr1.Body.String(), expected)
+	}
+
 }

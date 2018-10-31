@@ -5,6 +5,7 @@ package main
 
 import (
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -38,10 +39,10 @@ func (app *App) AddRoute(pattern string, handler http.Handler) {
 	}
 
 	parts := strings.Split(pattern, "/")
-	re := "{([^/]+)}"
+	re := "([^/]+)"
 	params := make([]string, 0)
 	for i, part := range parts {
-		if strings.HasPrefix(part, "{") {
+		if strings.HasPrefix(part, ":") {
 			parts[i] = re
 			params = append(params, part[1:len(part)])
 		}
@@ -72,19 +73,29 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	for _, route := range app.routes {
 		matches := route.regexp.FindStringSubmatch(path)
-		if len(matches[0]) != len(path) {
+		if matches == nil || len(matches[0]) != len(path) {
 			continue
 		}
 		if len(route.params) != len(matches)-1 {
 			continue
 		}
-		// values := r.URL.Query()
-		// for i, match := range matches[1:] {
-		// 	values.Add(route.params[i], match)
-		// }
-		// r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
 
-		route.handler.ServeHTTP(w, r)
+		// add parameter to url encoding
+		values := r.URL.Query()
+		for i, match := range matches[1:] {
+			values.Add(route.params[i], match)
+		}
+		r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
+
+		// appliment http serve
+		app.hanlder(route.handler).ServeHTTP(w, r)
 		break
 	}
+}
+
+func (app *App) hanlder(h http.Handler) http.Handler {
+	for _, m := range app.middlewares {
+		h = m(h)
+	}
+	return h
 }
