@@ -7,13 +7,13 @@ import (
 )
 
 func FindUsers(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing finalHandler")
+	log.Println("Executing FindUsers")
 	time.Sleep(time.Second * 1)
 	w.Write([]byte("OK"))
 }
 
 func FindUsersByID(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing finalHandler")
+	log.Println("Executing FindUsersByID")
 	vs := r.URL.Query()
 	log.Println(r.URL.RawQuery)
 	w.Write([]byte(vs.Get("id")))

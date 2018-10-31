@@ -3,8 +3,22 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
+
+/* Test Helpers */
+func expect(t *testing.T, a interface{}, b interface{}) {
+	if a != b {
+		t.Errorf("Expected %v (type %v) - Got %v (type %v)", b, reflect.TypeOf(b), a, reflect.TypeOf(a))
+	}
+}
+
+func refute(t *testing.T, a interface{}, b interface{}) {
+	if a == b {
+		t.Errorf("Did not expect %v (type %v) - Got %v (type %v)", b, reflect.TypeOf(b), a, reflect.TypeOf(a))
+	}
+}
 
 func TestApp(t *testing.T) {
 	// Mock a app as http Handler
@@ -51,5 +65,18 @@ func TestApp(t *testing.T) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr1.Body.String(), expected)
 	}
+}
 
+func TestApp_ServeHTTP(t *testing.T) {
+	app := NewApp(Logging)
+
+	req, err := http.NewRequest("GET", "/static", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	app.ServeHTTP(rr, req)
+
+	expect(t, rr.Code, http.StatusOK)
 }

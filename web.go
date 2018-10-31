@@ -71,9 +71,14 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// determines if the given path needs drop "/" to it.
 	path := r.URL.Path
+	if strings.HasPrefix(path, "/static") {
+		http.StripPrefix("/static", http.FileServer(http.Dir("."))).ServeHTTP(w, r)
+		return
+	}
 	if strings.HasSuffix(path, "/") {
 		path = path[:len(path)-1]
 	}
+
 	for _, route := range app.routes {
 		matches := route.regexp.FindStringSubmatch(path)
 		if matches == nil || len(matches[0]) != len(path) {
@@ -90,7 +95,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
 
-		// impliment http serve with app's middlewares
+		// implement http serve with app's middlewares
 		app.Handler(route.handler).ServeHTTP(w, r)
 		return
 	}

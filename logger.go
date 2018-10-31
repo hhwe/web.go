@@ -20,6 +20,6 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 
-		Logger.Println(time.Since(start))
+		Logger.Println(time.Since(start), r.URL.Path)
 	})
 }
