@@ -1,4 +1,4 @@
-package main
+package webgo
 
 import (
 	"net/http"
@@ -13,7 +13,10 @@ func TestRecovery(t *testing.T) {
 
 	// Mock a app as http Handler
 	app := NewApp(Recovery, Logging)
-	app.AddRoute("/error", http.HandlerFunc(FindUsersError))
+	app.AddRoute("/error", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
+		panic("test recovery")
+		w.Write([]byte("test logger url encoded string"))
+	})))
 	recorder := httptest.NewRecorder()
 
 	req, err := http.NewRequest("GET", "http://localhost:8080/error", nil)

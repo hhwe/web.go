@@ -1,7 +1,7 @@
 // web.go is a micro restful framework with golang
 // you can build a RESTful API with it.
 // Also completed a middleware chain for a  request.
-package main
+package webgo
 
 import (
 	"net/http"

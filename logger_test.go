@@ -1,4 +1,4 @@
-package main
+package webgo
 
 import (
 	"net/http"
@@ -24,8 +24,9 @@ func TestLogger(t *testing.T) {
 func TestLogger_URLEncodedString(t *testing.T) {
 	// Mock a app as http Handler
 	app := NewApp(Logging)
-	app.AddRoute("/users", http.HandlerFunc(FindUsers))
-	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
+	app.AddRoute("/users", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("test logger url encoded string"))
+	})))
 
 	recorder := httptest.NewRecorder()
 
@@ -43,9 +44,9 @@ func TestLogger_URLEncodedString(t *testing.T) {
 func TestLogger_CustomFormat(t *testing.T) {
 	// Mock a app as http Handler
 	app := NewApp(Logging)
-	app.AddRoute("/users", http.HandlerFunc(FindUsers))
-	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
-
+	app.AddRoute("/users", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("test logger url encoded string"))
+	})))
 	recorder := httptest.NewRecorder()
 
 	userAgent := "Negroni-Test"

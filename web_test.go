@@ -1,4 +1,4 @@
-package main
+package webgo
 
 import (
 	"net/http"
@@ -23,8 +23,9 @@ func refute(t *testing.T, a interface{}, b interface{}) {
 func TestApp(t *testing.T) {
 	// Mock a app as http Handler
 	app := NewApp(Logging)
-	app.AddRoute("/users", http.HandlerFunc(FindUsers))
-	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
+	app.AddRoute("/users", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("test app"))
+	})))
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -47,24 +48,7 @@ func TestApp(t *testing.T) {
 	}
 
 	// Check the response body is what we expect.
-	expected := "OK"
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
-	}
-
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	req1, err := http.NewRequest("GET", "/users/123", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr1 := httptest.NewRecorder()
-	app.ServeHTTP(rr1, req1)
-	expected = "123"
-	if rr1.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr1.Body.String(), expected)
-	}
+	expect(t, "test app", rr.Body.String())
 }
 
 func TestApp_ServeHTTP(t *testing.T) {

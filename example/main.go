@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"webgo"
 )
 
 func HomePage(w http.ResponseWriter, r *http.Request) {
 	log.Println("Executing FindUsers")
+	r.Context()
 	w.Write([]byte("Home Page"))
 }
 
@@ -27,7 +29,7 @@ func FindUsersByID(w http.ResponseWriter, r *http.Request) {
 
 func FindUsersError(w http.ResponseWriter, r *http.Request) {
 	log.Println("Executing finalHandler")
-	Logger.Panicln("你好")
+	log.Panicln("你好")
 	w.Write([]byte("OK"))
 }
 
@@ -36,7 +38,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	app := NewApp(Recovery, Logging)
+	app := webgo.NewApp(webgo.Recovery, webgo.Logging)
 
 	app.AddRoute("/", http.HandlerFunc(HomePage))
 	app.AddRoute("/users", http.HandlerFunc(FindUsers))
