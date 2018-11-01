@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -31,6 +32,10 @@ func FindUsersError(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	app := NewApp(Recovery, Logging)
 
 	app.AddRoute("/", http.HandlerFunc(HomePage))
@@ -38,5 +43,5 @@ func main() {
 	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
 	app.AddRoute("/error", http.HandlerFunc(FindUsersError))
 
-	log.Fatal(http.ListenAndServe(":8080", app))
+	log.Fatal(http.ListenAndServe(":"+port, app))
 }
