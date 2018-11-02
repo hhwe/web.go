@@ -24,14 +24,14 @@ func TestLogger(t *testing.T) {
 func TestLogger_URLEncodedString(t *testing.T) {
 	// Mock a app as http Handler
 	app := NewApp(Logging)
-	app.AddRoute("/users", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
+	app.AddRoute("/users/:id", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test logger url encoded string"))
 	})))
 
 	recorder := httptest.NewRecorder()
 
 	// Test reserved characters - !*'();:@&=+$,/?%#[]
-	req, err := http.NewRequest("GET", "http://localhost:8080/users%2F123232%0A%0A", nil)
+	req, err := http.NewRequest("GET", "http://localhost:8080/users/123232%0A%0A", nil)
 	if err != nil {
 		t.Error(err)
 	}

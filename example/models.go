@@ -30,7 +30,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 var loginCookieName = "_uid"
 
 func login(w http.ResponseWriter, r *http.Request) {
-	db := context.Get(r, "database").(*mgo.Database)
+	db := r.Context().Value("database").(*mgo.Database)
 
 	var u User
 	// todo: verify the validity of data, csrf token
