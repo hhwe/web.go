@@ -15,7 +15,6 @@ func TestRecovery(t *testing.T) {
 	app := NewApp(Recovery, Logging)
 	app.AddRoute("/error", http.HandlerFunc((func(w http.ResponseWriter, r *http.Request) {
 		panic("test recovery")
-		w.Write([]byte("test logger url encoded string"))
 	})))
 	recorder := httptest.NewRecorder()
 
