@@ -71,7 +71,6 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// determines if the given path needs drop "/" to it.
 	path := r.URL.Path
-	Logger.Println(path)
 	if strings.HasPrefix(path, "/static") {
 		http.StripPrefix("/static", http.FileServer(http.Dir("."))).ServeHTTP(w, r)
 		return

@@ -1,10 +1,13 @@
 // logging is imitate by py standar libriry logging.py
-package logging
+package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"os"
+	"strings"
 )
 
 type levelType int
@@ -22,11 +25,11 @@ var (
 )
 
 var levelName = map[levelType]string{
-	DEBUG:    "DEBUG",
-	INFO:     "INFO",
-	WARNING:  "WARNING",
-	ERROR:    "ERROR",
-	CRITICAL: "CRITICAL",
+	DEBUG:    "[DEBUG]",
+	INFO:     "[INFO]",
+	WARNING:  "[WARNING]",
+	ERROR:    "[ERROR]",
+	CRITICAL: "[CRITICAL]",
 }
 
 func GetLevelName(level levelType) string {
@@ -47,8 +50,7 @@ func GetNameLevel(name string) levelType {
 
 type logger interface {
 	Output(int, string) error
-	Print(...interface{})
-	Printf(string, ...interface{})
+	Println(...interface{})
 }
 
 type Logger struct {
@@ -63,20 +65,47 @@ func NewLogger(out io.Writer, flag int) *Logger {
 	}
 }
 
+// color terminal console output colorful string
+func color(color uint8, s string) string {
+	return fmt.Sprintf("\033[%dm%s\033[0m", color, s)
+}
+
 // SetLevel change the default level of Logger
 func (l *Logger) SetLever(name string) {
-	level, ok := nameLevel[name]
+	level, ok := nameLevel[strings.ToUpper(name)]
 	if !ok {
 		panic(LevelNotSupported)
 	}
 	l.Level = level
 }
 
-func (l *Logger) Debug(msg string) {
+func (l *Logger) output(level levelType, msg string) {
+	if level >= l.Level {
+		l.Println(color(94-uint8(level), levelName[level]) + msg)
+	}
 }
 
-// func (l *Logger) Info(msg string) {
-// }
+func (l *Logger) Debug(msg string) {
+	l.output(DEBUG, msg)
+}
 
-// func (l *Logger) Warning(msg string) {
-// }
+func (l *Logger) Info(msg string) {
+	l.output(INFO, msg)
+}
+
+func (l *Logger) Warning(msg string) {
+	l.output(WARNING, msg)
+}
+
+func (l *Logger) Error(msg string) {
+	l.output(ERROR, msg)
+}
+
+func main() {
+	logger := NewLogger(os.Stderr, log.LstdFlags)
+	logger.SetLever("info")
+	logger.Debug("debug message!")
+	logger.Info("info message!")
+	logger.Warning("warnig message!")
+	logger.Error("error message!")
+}
