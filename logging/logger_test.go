@@ -1,4 +1,4 @@
-package main
+package logging
 
 import (
 	"log"
@@ -7,9 +7,11 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	// Mock a app as http Handler
 	logger := NewLogger(os.Stderr, log.LstdFlags)
-	logger.SetLever("debug")
-	logger.Debug("the debug message!")
-	log.Println("the")
+	logger.SetLever("info")
+
+	logger.Debug("debug message!")
+	logger.Info("info message!")
+	logger.Warning("warnig message!")
+	logger.Error("error message!")
 }

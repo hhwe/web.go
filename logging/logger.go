@@ -1,12 +1,11 @@
 // logging is imitate by py standar libriry logging.py
-package main
+package logging
 
 import (
 	"errors"
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"strings"
 )
 
@@ -81,7 +80,7 @@ func (l *Logger) SetLever(name string) {
 
 func (l *Logger) output(level levelType, msg string) {
 	if level >= l.Level {
-		l.Println(color(94-uint8(level), levelName[level]) + msg)
+		l.Println(color(94-uint8(level), levelName[level]) + " " + msg)
 	}
 }
 
@@ -99,13 +98,4 @@ func (l *Logger) Warning(msg string) {
 
 func (l *Logger) Error(msg string) {
 	l.output(ERROR, msg)
-}
-
-func main() {
-	logger := NewLogger(os.Stderr, log.LstdFlags)
-	logger.SetLever("info")
-	logger.Debug("debug message!")
-	logger.Info("info message!")
-	logger.Warning("warnig message!")
-	logger.Error("error message!")
 }

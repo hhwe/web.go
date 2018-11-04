@@ -1,6 +1,6 @@
 // color.go make stdout colorful
 // more infomation in https://my.oschina.net/dingdayu/blog/1537064
-package main
+package logging
 
 import "fmt"
 
