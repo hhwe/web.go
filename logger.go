@@ -2,10 +2,9 @@ package webgo
 
 import (
 	"net/http"
-	"os"
 	"time"
 
-	"webgo/logging"
+	"github.com/hhwe/webgo/logging"
 )
 
 var Logger *logging.Logger

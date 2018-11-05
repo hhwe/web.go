@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/hhwe/webgo"
 	"log"
 	"net/http"
 	"os"
 	"time"
-	"webgo"
 )
 
 func HomePage(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +39,7 @@ func main() {
 		port = "8080"
 	}
 	app := webgo.NewApp(webgo.Recovery, webgo.Logging)
+	var logger = webgo.Logger
 
 	app.AddRoute("/", http.HandlerFunc(HomePage))
 	app.AddRoute("/users", http.HandlerFunc(FindUsers))

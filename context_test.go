@@ -9,7 +9,7 @@ import (
 
 func TestContext(t *testing.T) {
 	// Mock a app as http Handler
-	app := NewApp(Context)
+	app := NewApp(Authentication)
 	app.AddRoute("/status", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Get data from context
 		if username := r.Context().Value("Username"); username != nil {
