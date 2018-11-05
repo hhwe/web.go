@@ -14,8 +14,9 @@ func expect(t *testing.T, a interface{}, b interface{}) {
 
 func TestLogger(t *testing.T) {
 	buf := bytes.NewBuffer([]byte{})
-	logger := NewLogger(buf, 0)
+	logger := NewLogger()
 	logger.SetLever("info")
+	logger.Logger.SetOutput(buf)
 
 	// debug level can't ouptut
 	logger.Debug("debug")

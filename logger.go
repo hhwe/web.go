@@ -1,7 +1,6 @@
 package webgo
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -9,9 +8,10 @@ import (
 	"webgo/logging"
 )
 
-var Logger = logging.NewLogger(os.Stderr, log.LstdFlags)
+var Logger *logging.Logger
 
 func init() {
+	Logger = logging.NewLogger()
 	Logger.SetLever("debug")
 	Logger.SetColor(true)
 }

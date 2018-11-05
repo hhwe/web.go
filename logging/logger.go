@@ -1,11 +1,12 @@
-// logging is imitate by py standar libriry logging.py
+// logging is based on golang standar package log.
+// colorful, structured, leveled logging in Go.
 package logging
 
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -49,14 +50,14 @@ func GetNameLevel(name string) levelType {
 
 // Logger is base on log package with log level and colorful output
 type Logger struct {
-	logger *log.Logger
+	Logger *log.Logger
 	level  levelType
 	color  bool
 }
 
-func NewLogger(out io.Writer, flag int) *Logger {
+func NewLogger() *Logger {
 	return &Logger{
-		logger: log.New(out, "", flag),
+		Logger: log.New(os.Stderr, "", 0),
 		level:  INFO,
 		color:  false,
 	}
@@ -84,9 +85,9 @@ func color(color uint8, s string) string {
 func (l *Logger) output(level levelType, msg string) {
 	if level >= l.level {
 		if l.color {
-			l.logger.Println(color(94-uint8(level), levelName[level]) + " " + msg)
+			l.Logger.Println(color(94-uint8(level), levelName[level]) + " " + msg)
 		} else {
-			l.logger.Println(levelName[level] + " " + msg)
+			l.Logger.Println(levelName[level] + " " + msg)
 		}
 	}
 }
