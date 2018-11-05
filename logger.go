@@ -1,17 +1,19 @@
 package webgo
 
 import (
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"webgo/logging"
 )
 
-var Logger = NewLogger(os.Stdout, log.LstdFlags)
+var Logger = logging.NewLogger(os.Stderr, log.LstdFlags)
 
-func NewLogger(out io.Writer, flag int) *log.Logger {
-	return log.New(out, "[web.go]", flag)
+func init() {
+	Logger.SetLever("debug")
+	Logger.SetColor(true)
 }
 
 func Logging(next http.Handler) http.Handler {
@@ -20,6 +22,6 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 
-		Logger.Println(time.Since(start), r.URL.Path)
+		Logger.Info(time.Since(start))
 	})
 }

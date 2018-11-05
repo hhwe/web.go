@@ -47,26 +47,19 @@ func GetNameLevel(name string) levelType {
 	return nameLevel[name]
 }
 
-type logger interface {
-	Output(int, string) error
-	Println(...interface{})
-}
-
+// Logger is base on log package with log level and colorful output
 type Logger struct {
-	Level levelType
-	logger
+	logger *log.Logger
+	level  levelType
+	color  bool
 }
 
 func NewLogger(out io.Writer, flag int) *Logger {
 	return &Logger{
-		logger: log.New(out, "[web.go]", flag),
-		Level:  INFO,
+		logger: log.New(out, "", flag),
+		level:  INFO,
+		color:  false,
 	}
-}
-
-// color terminal console output colorful string
-func color(color uint8, s string) string {
-	return fmt.Sprintf("\033[%dm%s\033[0m", color, s)
 }
 
 // SetLevel change the default level of Logger
@@ -75,27 +68,43 @@ func (l *Logger) SetLever(name string) {
 	if !ok {
 		panic(LevelNotSupported)
 	}
-	l.Level = level
+	l.level = level
+}
+
+// SetColor logged output with colorful string
+func (l *Logger) SetColor(color bool) {
+	l.color = color
+}
+
+// color terminal console output colorful string
+func color(color uint8, s string) string {
+	return fmt.Sprintf("\033[%dm%s\033[0m", color, s)
 }
 
 func (l *Logger) output(level levelType, msg string) {
-	if level >= l.Level {
-		l.Println(color(94-uint8(level), levelName[level]) + " " + msg)
+	if level >= l.level {
+		if l.color {
+			l.logger.Println(color(94-uint8(level), levelName[level]) + " " + msg)
+		} else {
+			l.logger.Println(levelName[level] + " " + msg)
+		}
 	}
 }
 
-func (l *Logger) Debug(msg string) {
-	l.output(DEBUG, msg)
+// we can use implete Debugf(format string, msd ...interface{})
+// Logger.Info(fmt.Sprintf("%v", time.Since(start)))
+func (l *Logger) Debug(msg ...interface{}) {
+	l.output(DEBUG, fmt.Sprint(msg...))
 }
 
-func (l *Logger) Info(msg string) {
-	l.output(INFO, msg)
+func (l *Logger) Info(msg ...interface{}) {
+	l.output(INFO, fmt.Sprint(msg...))
 }
 
-func (l *Logger) Warning(msg string) {
-	l.output(WARNING, msg)
+func (l *Logger) Warning(msg ...interface{}) {
+	l.output(WARNING, fmt.Sprint(msg...))
 }
 
-func (l *Logger) Error(msg string) {
-	l.output(ERROR, msg)
+func (l *Logger) Error(msg ...interface{}) {
+	l.output(ERROR, fmt.Sprint(msg...))
 }

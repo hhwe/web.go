@@ -1,17 +1,35 @@
 package logging
 
 import (
-	"log"
-	"os"
+	"bytes"
+	"reflect"
 	"testing"
 )
 
+func expect(t *testing.T, a interface{}, b interface{}) {
+	if a != b {
+		t.Errorf("Expected %v (type %v) - Got %v (type %v)", b, reflect.TypeOf(b), a, reflect.TypeOf(a))
+	}
+}
+
 func TestLogger(t *testing.T) {
-	logger := NewLogger(os.Stderr, log.LstdFlags)
+	buf := bytes.NewBuffer([]byte{})
+	logger := NewLogger(buf, 0)
 	logger.SetLever("info")
 
-	logger.Debug("debug message!")
-	logger.Info("info message!")
-	logger.Warning("warnig message!")
-	logger.Error("error message!")
+	// debug level can't ouptut
+	logger.Debug("debug")
+	expect(t, buf.String(), "")
+
+	buf.Reset() // clear buffed stream
+	logger.Info("info")
+	expect(t, buf.String(), "[INFO] info\n")
+
+	buf.Reset()
+	logger.Warning("warning")
+	expect(t, buf.String(), "[WARNING] warning\n")
+
+	buf.Reset()
+	logger.Error("error")
+	expect(t, buf.String(), "[ERROR] error\n")
 }
