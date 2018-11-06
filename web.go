@@ -10,15 +10,15 @@ import (
 	"strings"
 )
 
-type middleware func(http.Handler) http.Handler
+type Middleware func(http.Handler) http.Handler
 
 // App is a HTTP multiplexer / router similar to net/http.Serveapp.
 type App struct {
-	middlewares []middleware
+	middlewares []Middleware
 	routes      map[string]Route
 }
 
-func NewApp(middlewares ...middleware) *App {
+func NewApp(middlewares ...Middleware) *App {
 	return &App{
 		middlewares: middlewares,
 		routes:      make(map[string]Route),

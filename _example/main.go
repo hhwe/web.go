@@ -1,56 +1,43 @@
 package main
 
 import (
-	"github.com/hhwe/webgo"
-	"log"
+	"fmt"
 	"net/http"
 	"os"
-	"time"
+
+	"github.com/hhwe/webgo"
+	"gopkg.in/mgo.v2"
 )
 
-func HomePage(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing FindUsers")
-	r.Context()
-	w.Write([]byte("Home Page"))
-}
-
-func FindUsers(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing FindUsers")
-	time.Sleep(time.Second * 1)
-	w.Write([]byte("OK"))
-}
-
-func FindUsersByID(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing FindUsersByID")
-	vs := r.URL.Query()
-	log.Println(r.URL.RawQuery)
-	w.Write([]byte(vs.Get("id")))
-}
-
-func FindUsersError(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing finalHandler")
-	log.Panicln("你好")
-	w.Write([]byte("OK"))
-}
+var (
+	logger = webgo.Logger
+)
 
 func main() {
+	host := os.Getenv("HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	app := webgo.NewApp(webgo.Recovery, webgo.Logging, dbSession)
-	var logger = webgo.Logger
+
+	var db, _ = mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:    []string{"localhost"},
+		Database: "web",
+	})
+	defer db.Close()
+
+	app := webgo.NewApp(webgo.Recovery, webgo.Logging, dbSession(db))
 
 	app.AddRoute("/", http.HandlerFunc(HomePage))
-	app.AddRoute("/users", http.HandlerFunc(FindUsers))
-	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
-	app.AddRoute("/error", http.HandlerFunc(FindUsersError))
 
-	logger.Info(`
+	logger.Info(fmt.Sprintf(`webgo restful api application 
 * Environment: production
-	WARNING: Do not use the development server in a production environment.
 * Debug mode: off
-* Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
-`)
+* Running on http://%s:%s/ (Press CTRL+C to quit)
+`, host, port))
 	logger.Info(http.ListenAndServe(":"+port, app))
 }

@@ -40,7 +40,6 @@ func ValidatePassword(userPassword string, hashed []byte) (bool, error) {
 	return true, nil
 }
 
-
 // UserController is our /user controller.
 // UserController is responsible to handle the following requests:
 // GET  			/user/register
@@ -49,4 +48,3 @@ func ValidatePassword(userPassword string, hashed []byte) (bool, error) {
 // POST 			/user/login
 // GET 				/user/me
 // All HTTP Methods /user/logout
-
