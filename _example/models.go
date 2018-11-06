@@ -1,4 +1,4 @@
-package datamodels
+package main
 
 import (
 	"time"
@@ -39,3 +39,14 @@ func ValidatePassword(userPassword string, hashed []byte) (bool, error) {
 	}
 	return true, nil
 }
+
+
+// UserController is our /user controller.
+// UserController is responsible to handle the following requests:
+// GET  			/user/register
+// POST 			/user/register
+// GET 				/user/login
+// POST 			/user/login
+// GET 				/user/me
+// All HTTP Methods /user/logout
+

@@ -38,7 +38,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	app := webgo.NewApp(webgo.Recovery, webgo.Logging)
+	app := webgo.NewApp(webgo.Recovery, webgo.Logging, dbSession)
 	var logger = webgo.Logger
 
 	app.AddRoute("/", http.HandlerFunc(HomePage))
@@ -46,5 +46,11 @@ func main() {
 	app.AddRoute("/users/:id", http.HandlerFunc(FindUsersByID))
 	app.AddRoute("/error", http.HandlerFunc(FindUsersError))
 
-	log.Fatal(http.ListenAndServe(":"+port, app))
+	logger.Info(`
+* Environment: production
+	WARNING: Do not use the development server in a production environment.
+* Debug mode: off
+* Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+`)
+	logger.Info(http.ListenAndServe(":"+port, app))
 }

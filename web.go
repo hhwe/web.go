@@ -61,13 +61,6 @@ func (app *App) AddRoute(pattern string, handler http.Handler) {
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.RequestURI == "*" {
-		if r.ProtoAtLeast(1, 1) {
-			w.Header().Set("Connection", "close")
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
 	// determines if the given path needs drop "/" to it.
 	path := r.URL.Path
