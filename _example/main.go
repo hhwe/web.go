@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -12,6 +13,10 @@ import (
 var (
 	logger = webgo.Logger
 )
+
+func init() {
+	logger.Logger.SetFlags(log.LstdFlags)
+}
 
 func main() {
 	host := os.Getenv("HOST")
