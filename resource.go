@@ -8,8 +8,20 @@ package webgo
 
 import (
 	"net/http"
+	"reflect"
 )
 
-type Resource interface {
+type Resourcer interface {
 	DispatchRequest(w http.ResponseWriter, r *http.Request)
+}
+
+// AddResource registers the resource for the given pattern.
+func (app *App) AddResource(pattern string, rs Resourcer) {
+	rsp := reflect.ValueOf(rs)
+	tp := rsp.Type()
+	getMethod, ok := tp.MethodByName("Get")
+	if ok {
+		getHandler := 
+		app.AddRoute(pattern, getHandler)
+	}
 }

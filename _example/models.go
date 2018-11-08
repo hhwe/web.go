@@ -59,12 +59,3 @@ func (u *User) Marshal() (t []byte) {
 	}
 	return
 }
-
-func (u *User) Get(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value("database").(*mgo.Session)
-	err := db.DB("web").C("user").Find(bson.M{}).One(&u)
-	if err != nil {
-		panic(err)
-	}
-	w.Write(u.Marshal())
-}
