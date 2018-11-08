@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// Authentication use r.Context() make request context
 func Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.Method, "-", r.RequestURI)
@@ -35,6 +36,7 @@ func (r *ResponseWriter) GetStatus() int {
 	return r.status
 }
 
+// todo: pass context when handler every requests.
 // Context is the most important part of webgo. It allows us to pass variables between middleware,
 // manage the flow, validate the JSON of a request and render a JSON response for example.
 type Context struct {

@@ -1,6 +1,10 @@
 package main
 
 import (
+	"encoding/json"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+	"net/http"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -48,6 +52,19 @@ func ValidatePassword(userPassword string, hashed []byte) (bool, error) {
 // POST 			/user/login
 // GET 				/user/me
 // All HTTP Methods /user/logout
-func (u *User) Get() *User {
-	return u
+func (u *User) Marshal() (t []byte) {
+	t, err := json.Marshal(u)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+func (u *User) Get(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value("database").(*mgo.Session)
+	err := db.DB("web").C("user").Find(bson.M{}).One(&u)
+	if err != nil {
+		panic(err)
+	}
+	w.Write(u.Marshal())
 }

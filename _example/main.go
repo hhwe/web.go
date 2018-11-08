@@ -39,6 +39,7 @@ func main() {
 
 	app.StaticWeb("/public", ".")
 	app.AddRoute("/", http.HandlerFunc(HomePage))
+	app.AddRoute("/users", http.HandlerFunc((&User{}).Get))
 
 	app.Run(":8080")
 }
