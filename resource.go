@@ -7,21 +7,18 @@
 package webgo
 
 import (
-	"net/http"
 	"reflect"
+	"regexp"
 )
 
-type Resourcer interface {
-	DispatchRequest(w http.ResponseWriter, r *http.Request)
+type Resource struct {
+	regexp *regexp.Regexp
+	// todo: use reflect type mapping handler function
+	handler reflect.Type
+	params  map[string]map[string]string
 }
 
 // AddResource registers the resource for the given pattern.
-func (app *App) AddResource(pattern string, rs Resourcer) {
-	rsp := reflect.ValueOf(rs)
-	tp := rsp.Type()
-	getMethod, ok := tp.MethodByName("Get")
-	if ok {
-		getHandler := 
-		app.AddRoute(pattern, getHandler)
-	}
+func (app *App) AddResource(pattern string, rs Resource) {
+
 }

@@ -16,3 +16,4 @@ type middleware func(http.Handler) http.Handler
 
 router is the core part of this package, I use a regexp package to mapping url and handler function, so that the dynamic url also can be handled. 
 
+##

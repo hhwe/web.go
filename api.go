@@ -7,36 +7,36 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 )
 
 type Middleware func(http.Handler) http.Handler
 
-// App is a HTTP multiplexer / router similar to net/http.Serveapp.
-type App struct {
+// Api is a HTTP multiplexer / router similar to net/http.ServeApi.
+type Api struct {
 	middlewares []Middleware
-	routes      map[string]Route
+	routes      map[string]map[string]Route
 }
 
-func NewApp(middlewares ...Middleware) *App {
-	return &App{
+func NewApi(middlewares ...Middleware) *Api {
+	return &Api{
 		middlewares: middlewares,
-		routes:      make(map[string]Route),
+		routes:      make(map[string]map[string]Route),
 	}
 }
 
 // Route stores information to match a request and build URLs.
 type Route struct {
-	regexp *regexp.Regexp
-	// todo: use reflect type mapping handler function
-	handler http.Handler
+	regexp  *regexp.Regexp
+	handler reflect.Type
 	params  []string
 }
 
 // AddRoute registers the handler for the given pattern.
-func (app *App) AddRoute(pattern string, handler http.Handler) {
-	if _, exist := app.routes[pattern]; exist {
+func (Api *Api) AddRoute(pattern string, handler http.Handler) {
+	if _, exist := Api.routes[pattern]; exist {
 		panic("http: multiple registrations for " + pattern)
 	}
 
@@ -46,30 +46,30 @@ func (app *App) AddRoute(pattern string, handler http.Handler) {
 	for i, part := range parts {
 		if strings.HasPrefix(part, ":") {
 			parts[i] = re
-			params = append(params, part[1:len(part)])
+			params = Apiend(params, part[1:len(part)])
 		}
 	}
 
-	if app.routes == nil {
-		app.routes = make(map[string]Route)
+	if Api.routes == nil {
+		Api.routes = make(map[string]Route)
 	}
-	app.routes[pattern] = Route{
+	Api.routes[pattern] = Route{
 		regexp:  regexp.MustCompile(strings.Join(parts, "/")),
 		handler: handler,
 		params:  params,
 	}
-	Logger.Info(fmt.Sprintf("route mapping %s -> %s", pattern, handler))
+	Logger.Info(fmt.Sprintf("route mApiing %s -> %s", pattern, handler))
 }
 
 // StaticWeb handle files from given file system root.
-func (app *App) StaticWeb(pattern, path string) {
+func (Api *Api) StaticWeb(pattern, path string) {
 	staticHandler := http.StripPrefix(pattern, http.FileServer(http.Dir(path)))
-	app.AddRoute(pattern, staticHandler)
+	Api.AddRoute(pattern, staticHandler)
 }
 
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
-func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (Api *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// determines if the given path needs drop "/" to it.
 	path := r.URL.Path
@@ -81,7 +81,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		path = path[:len(path)-1]
 	}
 
-	for _, route := range app.routes {
+	for _, route := range Api.routes {
 		matches := route.regexp.FindStringSubmatch(path)
 		if matches == nil || len(matches[0]) != len(path) {
 			continue
@@ -97,30 +97,30 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		r.URL.RawQuery = url.Values(values).Encode() + "&" + r.URL.RawQuery
 
-		// implement http serve with app's middlewares
-		app.Handler(route.handler).ServeHTTP(w, r)
+		// implement http serve with Api's middlewares
+		Api.Handler(route.handler).ServeHTTP(w, r)
 		return
 	}
 
 	// if no route matched, response with 404
-	app.Handler(http.HandlerFunc(NotFound)).ServeHTTP(w, r)
+	Api.Handler(http.HandlerFunc(NotFound)).ServeHTTP(w, r)
 }
 
 // Run attaches the router to a http.Server and starts listening and serving HTTP requests.
 // It is a shortcut for http.ListenAndServe(addr, router)
-// Note: this method will block the calling goroutine indefinitely unless an error happens.
-func (app *App) Run(addr ...string) {
+// Note: this method will block the calling goroutine indefinitely unless an error hApiens.
+func (Api *Api) Run(addr ...string) {
 	address := resolveAddress(addr)
-	Logger.Info(fmt.Sprintf(`webgo restful api application 
+	Logger.Info(fmt.Sprintf(`webgo restful api Apilication 
 * Environment: production
 * Debug mode: off
 * Running on http://%s/ (Press CTRL+C to quit)
 `, address))
-	Logger.Info(http.ListenAndServe(address, app))
+	Logger.Info(http.ListenAndServe(address, Api))
 }
 
-func (app *App) Handler(h http.Handler) http.Handler {
-	for _, m := range app.middlewares {
+func (Api *Api) Handler(h http.Handler) http.Handler {
+	for _, m := range Api.middlewares {
 		h = m(h)
 	}
 	return h
