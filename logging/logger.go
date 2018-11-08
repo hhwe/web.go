@@ -82,12 +82,12 @@ func color(color uint8, s string) string {
 	return fmt.Sprintf("\033[%dm%s\033[0m", color, s)
 }
 
-func (l *Logger) output(level levelType, msg string) {
+func (l *Logger) output(level levelType, msg ...interface{}) {
 	if level >= l.level {
 		if l.color {
-			l.Logger.Println(color(94-uint8(level), levelName[level]) + " " + msg)
+			l.Logger.Println(color(94-uint8(level), levelName[level]), fmt.Sprint(msg...))
 		} else {
-			l.Logger.Println(levelName[level] + " " + msg)
+			l.Logger.Println(levelName[level], fmt.Sprint(msg...))
 		}
 	}
 }
@@ -95,17 +95,17 @@ func (l *Logger) output(level levelType, msg string) {
 // we can use implete Debugf(format string, msd ...interface{})
 // Logger.Info(fmt.Sprintf("%v", time.Since(start)))
 func (l *Logger) Debug(msg ...interface{}) {
-	l.output(DEBUG, fmt.Sprint(msg...))
+	l.output(DEBUG, msg...)
 }
 
 func (l *Logger) Info(msg ...interface{}) {
-	l.output(INFO, fmt.Sprint(msg...))
+	l.output(INFO, msg...)
 }
 
 func (l *Logger) Warning(msg ...interface{}) {
-	l.output(WARNING, fmt.Sprint(msg...))
+	l.output(WARNING, msg...)
 }
 
 func (l *Logger) Error(msg ...interface{}) {
-	l.output(ERROR, fmt.Sprint(msg...))
+	l.output(ERROR, msg...)
 }

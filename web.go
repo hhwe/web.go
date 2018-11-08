@@ -4,6 +4,7 @@
 package webgo
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -27,7 +28,8 @@ func NewApp(middlewares ...Middleware) *App {
 
 // Route stores information to match a request and build URLs.
 type Route struct {
-	regexp  *regexp.Regexp
+	regexp *regexp.Regexp
+	// todo: use reflect type mapping handler function
 	handler http.Handler
 	params  []string
 }
@@ -56,6 +58,13 @@ func (app *App) AddRoute(pattern string, handler http.Handler) {
 		handler: handler,
 		params:  params,
 	}
+	Logger.Info(fmt.Sprintf("route mapping %s -> %s", pattern, handler))
+}
+
+// StaticWeb handle files from given file system root.
+func (app *App) StaticWeb(pattern, path string) {
+	staticHandler := http.StripPrefix(pattern, http.FileServer(http.Dir(path)))
+	app.AddRoute(pattern, staticHandler)
 }
 
 // ServeHTTP dispatches the request to the handler whose
@@ -94,7 +103,20 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if no route matched, response with 404
-	http.HandlerFunc(NotFound).ServeHTTP(w, r)
+	app.Handler(http.HandlerFunc(NotFound)).ServeHTTP(w, r)
+}
+
+// Run attaches the router to a http.Server and starts listening and serving HTTP requests.
+// It is a shortcut for http.ListenAndServe(addr, router)
+// Note: this method will block the calling goroutine indefinitely unless an error happens.
+func (app *App) Run(addr ...string) {
+	address := resolveAddress(addr)
+	Logger.Info(fmt.Sprintf(`webgo restful api application 
+* Environment: production
+* Debug mode: off
+* Running on http://%s/ (Press CTRL+C to quit)
+`, address))
+	Logger.Info(http.ListenAndServe(address, app))
 }
 
 func (app *App) Handler(h http.Handler) http.Handler {

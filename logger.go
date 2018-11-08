@@ -2,6 +2,7 @@ package webgo
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hhwe/webgo/logging"
@@ -21,6 +22,6 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 
-		Logger.Info(time.Since(start))
+		Logger.Info(strings.Join([]string{r.Method, r.URL.Path, time.Since(start).String()}, " | "))
 	})
 }

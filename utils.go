@@ -2,13 +2,31 @@ package webgo
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 )
 
 // assert assssment expression is true
 func assert(exp bool, text string) {
 	if !exp {
 		panic(text)
+	}
+}
+
+func resolveAddress(addr []string) string {
+	switch len(addr) {
+	case 0:
+		if port := os.Getenv("PORT"); port != "" {
+			Logger.Debug(fmt.Sprintf("Environment variable PORT=\"%s\"", port))
+			return "localhost:" + port
+		}
+		Logger.Debug("Environment variable PORT is undefined. Using port :8080 by default")
+		return "localhost:8080"
+	case 1:
+		return addr[0]
+	default:
+		panic("too much parameters")
 	}
 }
 

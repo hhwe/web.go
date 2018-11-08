@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +15,7 @@ var (
 
 func init() {
 	logger.Logger.SetFlags(log.LstdFlags)
+	logger.SetLever("debug")
 }
 
 func main() {
@@ -37,12 +37,8 @@ func main() {
 
 	app := webgo.NewApp(webgo.Recovery, webgo.Logging, dbSession(db))
 
+	app.StaticWeb("/public", ".")
 	app.AddRoute("/", http.HandlerFunc(HomePage))
 
-	logger.Info(fmt.Sprintf(`webgo restful api application 
-* Environment: production
-* Debug mode: off
-* Running on http://%s:%s/ (Press CTRL+C to quit)
-`, host, port))
-	logger.Info(http.ListenAndServe(":"+port, app))
+	app.Run(":8080")
 }

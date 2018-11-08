@@ -48,3 +48,6 @@ func ValidatePassword(userPassword string, hashed []byte) (bool, error) {
 // POST 			/user/login
 // GET 				/user/me
 // All HTTP Methods /user/logout
+func (u *User) Get() *User {
+	return u
+}
