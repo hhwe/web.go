@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/hhwe/webgo"
 	"net/http"
+
+	"github.com/hhwe/webgo"
 
 	"gopkg.in/mgo.v2/bson"
 
@@ -20,6 +21,7 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(u.Username))
 }
 
+// contriller is a
 type UserController struct {
 	model User
 	webgo.Resource
